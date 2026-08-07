@@ -1,4 +1,4 @@
-# PH Healthcare System — Backend
+#  Healthcare System — Backend
 
 REST API for a doctor-appointment platform: patients book consultations, doctors run them, admins manage the platform. This repo is the backend only.
 
