@@ -1,4 +1,4 @@
-import { Response } from "express";
+import type { Response } from "express";
 
 type TMeta = {
 	page: number;

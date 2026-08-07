@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { Prisma } from "../../generated/prisma/client";
 import config from "../config";
@@ -16,7 +16,7 @@ export const globalErrorHandler = async (
 
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
 	let errorMessage = err.message || "Internal Server Error";
-	let errorName = err.name || "Internal Server Error";
+	const errorName = err.name || "Internal Server Error";
 	// let errorDetails = err.stack
 
 	if (err instanceof Prisma.PrismaClientValidationError) {
