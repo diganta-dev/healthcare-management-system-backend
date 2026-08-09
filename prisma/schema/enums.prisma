@@ -16,3 +16,12 @@ enum Gender {
   FEMALE
   OTHER
 }
+ 
+enum AuthProvider {
+  GOOGLE
+  FACEBOOK
+  TWITTER
+  GITHUB
+  LINKEDIN
+  CREDENTIAL
+} 
