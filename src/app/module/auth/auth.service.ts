@@ -17,7 +17,7 @@ import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../lib/googleAuth";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
-	const { name, password,patient:patientData } = payload;
+	const { name, password, patient: patientData } = payload;
 	const email = payload.email.trim().toLowerCase();
 
 	const isUserExists = await prisma.user.findUnique({
@@ -28,7 +28,10 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 		throw new Error("User with this email already exists");
 	}
 
-	const hashedPassword = await bcrypt.hash(password, Number(config.bcrypt_salt_rounds));
+	const hashedPassword = await bcrypt.hash(
+		password,
+		Number(config.bcrypt_salt_rounds),
+	);
 
 	const createdUser = await prisma.user.create({
 		data: {
@@ -39,7 +42,13 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 			status: UserStatus.ACTIVE,
 			emailVerified: false,
 			patient: {
-				create: { name, email, ...(patientData?.contactNumber && { contactNumber: patientData.contactNumber }) },
+				create: {
+					name,
+					email,
+					...(patientData?.contactNumber && {
+						contactNumber: patientData.contactNumber,
+					}),
+				},
 			},
 		},
 		omit: { password: true },
@@ -93,11 +102,16 @@ const loginUser = async (payload: ILoginUserPayload) => {
 	if (user.isDeleted || user.status === UserStatus.DELETED) {
 		throw new Error("User is deleted");
 	}
-	if(user.password ===null && user.googleId !==null){
-		throw new Error("User is registered with Google. Please login with Google.");
+	if (user.password === null && user.googleId !== null) {
+		throw new Error(
+			"User is registered with Google. Please login with Google.",
+		);
 	}
 
-	const isPasswordMatched = await bcrypt.compare(password, user.password as string);
+	const isPasswordMatched = await bcrypt.compare(
+		password,
+		user.password as string,
+	);
 
 	if (!isPasswordMatched) {
 		throw new Error("Invalid credentials");
