@@ -11,7 +11,7 @@ export interface IRegisterPatientPayload {
 	password: string;
 	patient?: {
 		contactNumber?: string;
-	}
+	};
 }
 
 export interface IRequestUser {
