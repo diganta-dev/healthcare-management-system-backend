@@ -16,18 +16,18 @@
 		"enabled": true,
 		"rules": {
 			"preset": "recommended",
-			"suspicious":{
-				"noExplicitAny": "warn"
+			"suspicious": {
+				 "noExplicitAny" : "warn"
 			},
-			"complexity":{
-				"noCommaOperator":"info"
+			"complexity": {
+				"noCommaOperator": "info"
 			},
 			"correctness":{
-				"noUnusedFunctionParameters": "off"
+				"noUnusedFunctionParameters" :"off"
 			},
-			"style":{
-				"noNonNullAssertion":"info",
-				"useNodejsImportProtocol":"off"
+			"style" : {
+				"noNonNullAssertion" : "info",
+				"useNodejsImportProtocol" : "info"
 			}
 		}
 	},

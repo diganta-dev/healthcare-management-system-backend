@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-app.use("/api/v1",router);
+app.use("/api/v1", router);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
