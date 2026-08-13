@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import type { IRequestUser } from "./auth.interface";
+import type { IGoogleLoginPayload, IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
 
 const registerPatient = catchAsync(async (req: Request, res: Response) => {
@@ -62,12 +62,12 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 		data: {
 			accessToken,
 			refreshToken,
-		},
+		}, 
 	});
 });
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
-	const result = await AuthService.googleLogin(payload.token);
+	const result = await AuthService.googleLogin(payload);
 	const { accessToken, refreshToken } = result;
 
 	res.cookie("accessToken", accessToken, {
@@ -140,6 +140,26 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 		},
 	});
 });
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	 await AuthService.forgotPassword(payload);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: `OTP sent to ${payload.email} successfully`,
+		data: null,	
+	});
+});
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	 await AuthService.resetPassword(payload);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Password reset successfully",
+		data: null,
+	});
+});
 
 export const AuthController = {
 	registerPatient,
@@ -147,4 +167,6 @@ export const AuthController = {
 	getMe,
 	refreshToken,
 	googleLogin,
+	forgotPassword,
+	resetPassword,
 };
