@@ -19,6 +19,7 @@ import type { TokenPayload } from "google-auth-library";
 import { googleClient } from "../../lib/googleAuth";
 import crypto from "crypto";
 import redisClient from "../../lib/redis";
+import { transporter } from "../../lib/nodemailer";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password, patient: patientData } = payload;
@@ -374,6 +375,13 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
 			value: 5 * 60 // 5 minutes in seconds
 		}
 	});
+	await transporter.sendMail({
+      from: config.SENDER_EMAIL_USER,
+	  to: isUserExists.email,
+	  subject: "Password Reset OTP",
+	  text: `Your OTP for password reset is: ${otp}. It will expire in 5 minutes.`,
+	});
+	
 
 }
 const resetPassword = async (payload: IResetPasswordPayload) => {
