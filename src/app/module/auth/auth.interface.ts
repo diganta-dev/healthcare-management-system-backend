@@ -13,6 +13,10 @@ export interface IRegisterPatientPayload {
 		contactNumber?: string;
 	};
 }
+export interface IVerifyRegistrationEmailPayload {
+	email: string;
+	otp: string;
+}
 
 export interface IRequestUser {
 	userId: string;
