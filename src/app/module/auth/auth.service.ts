@@ -20,6 +20,8 @@ import { googleClient } from "../../lib/googleAuth";
 import crypto from "crypto";
 import redisClient from "../../lib/redis";
 import { transporter } from "../../lib/nodemailer";
+import path from "path";
+import ejs from "ejs";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password, patient: patientData } = payload;
@@ -368,18 +370,31 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
 
 	const otp = crypto.randomInt(100000, 999999).toString();
 	// Here you can send the OTP to the user's email using your preferred email service
+	const expirationSeconds = 5 * 60
 	const key = `forgot-password-otp:${isUserExists.email}`;
 	await redisClient.set(key, otp, {
 		expiration:{
 			type: 'EX',
-			value: 5 * 60 // 5 minutes in seconds
+			value: expirationSeconds // 5 minutes in seconds
 		}
 	});
+	
+	const templatePath = path.join(process.cwd(), "src/app/templates/forget-password.ejs");
+	const templateData = {
+  name: isUserExists.name,
+  email: isUserExists.email,
+  otp,
+  appName: config.app_name,
+  expiresIn: "5 minutes",
+};
+
+	const html = await ejs.renderFile(templatePath, templateData);
+
 	await transporter.sendMail({
       from: config.SENDER_EMAIL_USER,
 	  to: isUserExists.email,
 	  subject: "Password Reset OTP",
-	  text: `Your OTP for password reset is: ${otp}. It will expire in 5 minutes.`,
+	  html: html,
 	});
 	
 
@@ -423,6 +438,18 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 		},
 	});
 	await redisClient.del(key);
+	const templatePath = path.join(process.cwd(), "src/app/templates/reset-password-success.ejs");
+	const templateData = {
+		  name: isUserExists.name,
+		  appName: config.app_name
+	};
+	const html = await ejs.renderFile(templatePath, templateData);
+	await transporter.sendMail({
+	  from: config.SENDER_EMAIL_USER,
+	  to: isUserExists.email,
+	  subject: "Password Reset Successful", 
+	  html: html,
+	});
 }
 
 export const AuthService = {

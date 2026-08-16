@@ -32,4 +32,5 @@ export default {
 	SMTP_USER: process.env.SMTP_USER!,
 	SMTP_PASSWORD: process.env.SMTP_PASSWORD!,
 	SENDER_EMAIL_USER: process.env.SENDER_EMAIL_USER!,
+	app_name: process.env.APP_NAME!,
 };
