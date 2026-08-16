@@ -7,9 +7,36 @@ import { AuthService } from "./auth.service";
 
 const registerPatient = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
-	const result = await AuthService.registerPatient(payload);
+	 await AuthService.registerPatient(payload);
 
-	const { accessToken, refreshToken, user, patient } = result;
+	
+
+	// res.cookie("accessToken", accessToken, {
+	// 	httpOnly: true,
+	// 	secure: false,
+	// 	sameSite: "none",
+	// 	maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+	// });
+	// res.cookie("refreshToken", refreshToken, {
+	// 	httpOnly: true,
+	// 	secure: false,
+	// 	sameSite: "none",
+	// 	maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+	// });
+
+	sendResponse(res, {
+		statusCode: httpStatus.CREATED,
+		success: true,
+		message: "Verification email sent successfully, please check your email inbox or spam folder",
+		data: null,
+	});
+});
+const verifyRegistrationEmail = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	const result = await AuthService.verifyRegistrationEmail(payload); 
+	const { accessToken, refreshToken , user , patient } = result;
+
+	
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
@@ -27,13 +54,8 @@ const registerPatient = catchAsync(async (req: Request, res: Response) => {
 	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
 		success: true,
-		message: "Patient registered successfully",
-		data: {
-			accessToken,
-			refreshToken,
-			user,
-			patient,
-		},
+		message: "User registered successfully",
+		data: null,
 	});
 });
 
@@ -62,7 +84,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 		data: {
 			accessToken,
 			refreshToken,
-		}, 
+		},
 	});
 });
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
@@ -142,17 +164,17 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 });
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
-	 await AuthService.forgotPassword(payload);
+	await AuthService.forgotPassword(payload);
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,
-		message: `OTP sent to ${payload.email} successfully`,
-		data: null,	
+		message: `OTP sent to ${payload.email} successfully , please check your email inbox or spam folder`,
+		data: null,
 	});
 });
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
-	 await AuthService.resetPassword(payload);
+	await AuthService.resetPassword(payload);
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,
@@ -163,6 +185,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 export const AuthController = {
 	registerPatient,
+	verifyRegistrationEmail,
 	loginUser,
 	getMe,
 	refreshToken,
