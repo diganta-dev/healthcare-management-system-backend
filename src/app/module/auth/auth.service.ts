@@ -103,6 +103,7 @@ const verifyRegistrationEmail = async (payload: IVerifyRegistrationEmailPayload)
 			throw new Error("User is deleted");
 		}
 	}
+	//redis key for otp verification
 	const redisOtp = await redisClient.get(`register-verify-otp:${email}`);
 	if (!redisOtp) {
 		throw new Error("Invalid or expired OTP");
@@ -110,7 +111,7 @@ const verifyRegistrationEmail = async (payload: IVerifyRegistrationEmailPayload)
 	if(redisOtp !== otp){
 		throw new Error("Invalid OTP");
 	}
-
+    // redis key for user registration data
 	const redisUserData = await redisClient.get(`register-user:${email}`);
 	if (!redisUserData) {
 		throw new Error("User registration data not found or expired");
@@ -142,6 +143,23 @@ const verifyRegistrationEmail = async (payload: IVerifyRegistrationEmailPayload)
 
 	await redisClient.del(`register-verify-otp:${email}`);
 	await redisClient.del(`register-user:${email}`);
+	// Send a confirmation email to the user after successful registration
+	const templatePath = path.join(
+		process.cwd(),
+		"src/app/templates/welcome-email.ejs",
+	);
+	const templateData = {
+		name: createdUser.name,
+		appName: config.app_name,
+	};
+	const html = await ejs.renderFile(templatePath, templateData);
+	await transporter.sendMail({
+		from: config.SENDER_EMAIL_USER,
+		to: email,
+		subject: "Welcome to " + config.app_name,  
+		html: html,
+	});
+
 	const { patient, ...users } = createdUser;
 	const jwtPayload = {
 		userId: users.id,

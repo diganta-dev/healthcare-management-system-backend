@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome</title>
+</head>
+
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, sans-serif;">
+
+  <div style="max-width:600px; margin:40px auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <div style="background:#2563eb; padding:30px; text-align:center; color:#ffffff;">
+      <h1 style="margin:0;">Welcome 🎉</h1>
+    </div>
+
+    <!-- Content -->
+    <div style="padding:35px;">
+
+      <h2 style="color:#222;">
+        Hello <%= name %> 👋
+      </h2>
+
+      <p style="color:#555; font-size:16px; line-height:1.7;">
+        Welcome to <strong><%= appName %></strong>!
+      </p>
+
+      <p style="color:#555; font-size:15px; line-height:1.7;">
+        Your account has been successfully created.
+        We are happy to have you with us.
+      </p>
+
+      <p style="color:#555; font-size:15px; line-height:1.7;">
+        You can now start using our platform and enjoy our services.
+      </p>
+
+      <p style="color:#555; font-size:15px; margin-top:30px;">
+        Best regards,<br />
+        <strong><%= appName %> Team</strong>
+      </p>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f8fafc; padding:20px; text-align:center;">
+      <p style="margin:0; color:#888; font-size:12px;">
+        Thank you for joining <%= appName %>.
+      </p>
+    </div>
+
+  </div>
+
+</body>
+</html>
