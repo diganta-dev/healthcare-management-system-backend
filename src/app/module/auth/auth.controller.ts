@@ -54,8 +54,13 @@ const verifyRegistrationEmail = catchAsync(async (req: Request, res: Response) =
 	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
 		success: true,
-		message: "User registered successfully",
-		data: null,
+		message: "Email verified successfully", 
+		data: {
+			accessToken,
+			refreshToken,
+			user,
+			patient
+		},
 	});
 });
 
