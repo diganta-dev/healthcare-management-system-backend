@@ -156,7 +156,7 @@ const verifyRegistrationEmail = async (payload: IVerifyRegistrationEmailPayload)
 	await transporter.sendMail({
 		from: config.SENDER_EMAIL_USER,
 		to: email,
-		subject: "Welcome to " + config.app_name,  
+		subject: `Welcome to ${config.app_name}`,  
 		html: html,
 	});
 
