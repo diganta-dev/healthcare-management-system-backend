@@ -5,19 +5,19 @@ import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
-  if (!req.file) {
-       throw new Error("No File Provided.")
-    }
-    const userId = req.user?.userId as string;
- const user = await UserService.uploadProfileImage(req.file?.buffer, userId);
-  sendResponse(res, {
+	if (!req.file) {
+		throw new Error("No File Provided.");
+	}
+	const userId = req.user?.userId as string;
+	const user = await UserService.uploadProfileImage(req.file?.buffer, userId);
+	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
 		success: true,
-		message: "Profile image uploaded successfully", 
+		message: "Profile image uploaded successfully",
 		data: user,
 	});
 });
 
 export const UserController = {
-  uploadProfileImage,
+	uploadProfileImage,
 };
