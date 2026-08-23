@@ -1,1 +1,1 @@
-interface IAppointment {}
+type IAppointment = {}

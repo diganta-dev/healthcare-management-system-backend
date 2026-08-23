@@ -1,4 +1,4 @@
-import { UploadApiResponse } from "cloudinary";
+import type { UploadApiResponse } from "cloudinary";
 import { cloudinaryConfig } from "../../lib/cloudinary";
 import { prisma } from "../../lib/prisma";
 
