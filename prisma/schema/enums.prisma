@@ -25,3 +25,17 @@ enum AuthProvider {
   LINKEDIN
   CREDENTIAL
 } 
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  ONGOING
+  COMPLETED
+}
+enum PaymentStatus {
+  UNPAID
+  PAID
+  COMPLETED
+  FAILED
+  REFUNDED
+}
