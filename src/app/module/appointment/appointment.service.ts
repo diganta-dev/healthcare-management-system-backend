@@ -59,11 +59,75 @@ const bookAppointment = async (payload: IAppointment,user: RequestUser) => {
 		}
 	})
 
-	return bkashCreatePaymentResult.bkashURL;
+	return {
+		paymentURL: bkashCreatePaymentResult.bkashURL,
+	};
 	})
 	return transactionResult;
 };
 
+
+const payAppointment = async (payload:any, user: RequestUser) => {
+       const appointmentId = payload.appointmentId;
+	   const appointment = await prisma.appointment.findUnique({
+		where: {
+			id: appointmentId,
+		},
+	});
+	if (!appointment) {
+		throw new Error("Appointment not found");
+	}
+	if(appointment.status !== AppointmentStatus.PENDING){
+		throw new Error("Appointment is not in pending status");
+	}
+	const idToken = await getBkashIdToken();
+	if (!idToken) {
+		throw new Error("Failed to get bKash id token");
+	}
+	const createBkashPaymentResponse = await fetch(
+		`${config.bkash_base_url}/tokenized/checkout/create`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: idToken,
+				"x-app-key": config.bkash_app_key,
+			},
+			body: JSON.stringify({
+				agreementID: "TokenizedMerchant01L3IKB6H1565072174986", //appointment id
+				mode: "0011",
+				payerReference: user.email, //user phone number or email
+				callbackURL: `${config.bkash_callback_url}/appointment/book-appointment/payment/callback`,
+				merchantAssociationInfo: "MI05MID54RF09123456One",
+				amount: "1200",
+				currency: "BDT",
+				intent: "sale",
+				merchantInvoiceNumber: appointment.id, //appointment id
+			}),
+		},
+	);
+
+	if (!createBkashPaymentResponse.ok) {
+		throw new Error("Failed to create bKash payment");
+	}
+
+	const bkashCreatePaymentResult = await createBkashPaymentResponse.json();
+	await prisma.payment.update({
+		where: {
+			appointmentId:appointment.id,
+		},
+		data: {
+			bkashPaymentId:bkashCreatePaymentResult.paymentID,
+			merchantInvoiceNumber:bkashCreatePaymentResult.merchantInvoiceNumber,
+			gatewayResponse:bkashCreatePaymentResult,
+		}
+	})
+	return {
+		paymentURL: bkashCreatePaymentResult.bkashURL,
+	};
+}
+ 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 const bookAppointmentPaymentCallback = async (query: any) => {
 	const transactionResult = await prisma.$transaction(async (tx) => {

@@ -10,7 +10,7 @@ const bookAppointment = catchAsync(async (req, res) => {
 		success: true,
 		statusCode: 200,
 		message: "Appointment Booked Successfully",
-		data: appointmentData,
+		data: appointmentData
 	});
 });
 
