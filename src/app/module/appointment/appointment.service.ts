@@ -165,7 +165,7 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 			throw new Error("Failed to get bKash id token");
 		}
 		const refundBkashPaymentResponse = await fetch(
-			`${config.bkash_base_url}/v2/tokenized-checkout/refund/payment/transaction`,
+			`${config.bkash_base_url}/tokenized/checkout/payment/refund`,
 			{
 				method: "POST",
 				headers: {
@@ -175,9 +175,9 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 					"x-app-key": config.bkash_app_key,
 				},
 				body: JSON.stringify({
-					trxId: appointment.payment?.bkashTrxId,
-					refundAmount: appointment.payment?.amount,
-					paymentId: appointment.payment?.bkashPaymentId,
+					paymentID: appointment.payment?.bkashPaymentId,
+					amount: appointment.payment?.amount.toString(),
+					trxID: appointment.payment?.bkashTrxId,
 					sku: "Appointment Cancellation",
 					reason: "Patient Cancelled The Appointment",
 				}),
@@ -214,40 +214,59 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 const bookAppointmentPaymentCallback = async (query: any) => {
 	const transactionResult = await prisma.$transaction(async (tx) => {
 		const paymentId = query.paymentID;
+		const status = query.status;
 
 		if (!paymentId) {
 			throw new Error("Payment Id Missing");
 		}
 
-		const status = query.status;
-
 		if (!status) {
 			throw new Error("Payment Status is Missing");
 		}
-		const idToken = await getBkashIdToken();
-		if (!idToken) {
-			throw new Error("Failed to get bKash id token");
-		}
-		const executeBkashPayment = await fetch(
-			`${config.bkash_base_url}/tokenized/checkout/execute`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json",
-					Authorization: idToken,
-					"x-app-key": config.bkash_app_key,
-				},
-				body: JSON.stringify({
-					paymentID: paymentId,
-				}),
-			},
-		);
-		if (!executeBkashPayment.ok) {
-			throw new Error("Failed to execute bKash payment");
-		}
-		const executeBkashPaymentResult = await executeBkashPayment.json();
+
 		if (status === "success") {
+			const idToken = await getBkashIdToken();
+			if (!idToken) {
+				throw new Error("Failed to get bKash id token");
+			}
+			const executeBkashPayment = await fetch(
+				`${config.bkash_base_url}/tokenized/checkout/execute`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						Authorization: idToken,
+						"x-app-key": config.bkash_app_key,
+					},
+					body: JSON.stringify({
+						paymentID: paymentId,
+					}),
+				},
+			);
+			if (!executeBkashPayment.ok) {
+				throw new Error("Failed to execute bKash payment");
+			}
+			const executeBkashPaymentResult = await executeBkashPayment.json();
+
+			if (
+				executeBkashPaymentResult.statusCode &&
+				executeBkashPaymentResult.statusCode !== "0000"
+			) {
+				await tx.payment.update({
+					where: {
+						bkashPaymentId: paymentId,
+					},
+					data: {
+						status: PaymentStatus.FAILED,
+						gatewayResponse: executeBkashPaymentResult,
+					},
+				});
+				return {
+					redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=failure&message=${executeBkashPaymentResult.statusMessage}`,
+				};
+			}
+
 			await tx.appointment.update({
 				where: {
 					id: executeBkashPaymentResult.merchantInvoiceNumber,
@@ -278,12 +297,10 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 				},
 				data: {
 					status: PaymentStatus.FAILED,
-
-					gatewayResponse: executeBkashPaymentResult,
 				},
 			});
 			return {
-				redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=failue`,
+				redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=failure`,
 			};
 		} else if (status === "cancel") {
 			await tx.payment.update({
@@ -292,8 +309,6 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 				},
 				data: {
 					status: PaymentStatus.CANCELLED,
-
-					gatewayResponse: executeBkashPaymentResult,
 				},
 			});
 			return {
