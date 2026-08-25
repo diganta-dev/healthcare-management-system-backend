@@ -1,3 +1,1 @@
-type IAppointment = {
-    
-}
+type IAppointment = {};
