@@ -18,11 +18,11 @@ const moduleRoutes = [
 	{
 		path: "/appointment",
 		route: AppointMentRoute,
-	},{
+	},
+	{
 		path: "/doctor",
-		route:DoctorRoute,
-	}
-
+		route: DoctorRoute,
+	},
 ];
 
 moduleRoutes.forEach((route) => {

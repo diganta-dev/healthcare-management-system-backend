@@ -24,11 +24,11 @@ const uploadProfileImage = async (buffer: Buffer, userId: string) => {
 						resolve(result);
 					},
 				)
-				.end(buffer); 
+				.end(buffer);
 		},
 	);
 
-	const updatedUser = await prisma.user.update({ 
+	const updatedUser = await prisma.user.update({
 		where: { id: userId },
 		data: {
 			imageUrl: cloudinaryResult.secure_url,

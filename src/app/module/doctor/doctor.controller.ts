@@ -2,6 +2,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { DoctorService } from "./doctor.service";
+import { RequestUser } from "../../middleware/checkAuth";
 
 const applyDoctor = catchAsync(async (req, res) => {
 	const files = req.files as
@@ -14,9 +15,9 @@ const applyDoctor = catchAsync(async (req, res) => {
 	if (!resumeFile) {
 		throw new Error("Resume file is required");
 	}
-  if(!additionalFiles){
-    throw new Error("Additional files are required");
-  } 
+	if (!additionalFiles) {
+		throw new Error("Additional files are required");
+	}
 
 	const applyDoctorResult = await DoctorService.applyDoctor(
 		req.body,
@@ -40,20 +41,34 @@ const verifyDoctorEmail = catchAsync(async (req, res) => {
 		success: true,
 		message: "Doctor Verification Successful",
 		data: verifyDoctorResult,
-	});	
+	});
 });
-
 
 const aproveDoctorApplication = catchAsync(async (req, res) => {
-      
+	const payload = req.body;
+	const reviewer = req.user!;
+	const aproveDoctorResult = await DoctorService.aproveDoctorApplication(payload, reviewer);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Doctor Application Updated Successfully",
+		data: aproveDoctorResult,
+	});
 });
- 
-
-
-
+const getAllDoctors = catchAsync(async (req, res) => {
+	const result = await DoctorService.getAllDoctors(req.query);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "All Doctors retrieved successfully",
+		meta: result.meta,
+		data: result.data,
+	});
+});
 
 export const DoctorController = {
-    applyDoctor,
-    verifyDoctorEmail,
-	aproveDoctorApplication
-}
+	applyDoctor,
+	verifyDoctorEmail,
+	aproveDoctorApplication,
+	getAllDoctors,
+};

@@ -291,7 +291,7 @@ const googleLogin = async (token: string) => {
 			where: {
 				email: googleIdTokenPayload.email,
 				role: Role.PATIENT,
-				authProvider: AuthProvider.CREDENTIAL,
+				provider: AuthProvider.CREDENTIAL,
 			},
 		});
 
@@ -319,7 +319,7 @@ const googleLogin = async (token: string) => {
 				},
 				data: {
 					googleId: googleIdTokenPayload.sub,
-					authProvider: AuthProvider.GOOGLE,
+					provider: AuthProvider.GOOGLE,
 				},
 			});
 		} else {
@@ -331,7 +331,7 @@ const googleLogin = async (token: string) => {
 					googleId: googleIdTokenPayload.sub,
 					role: Role.PATIENT,
 					emailVerified: true,
-					authProvider: AuthProvider.GOOGLE,
+					provider: AuthProvider.GOOGLE,
 
 					patient: {
 						create: {
