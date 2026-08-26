@@ -15,5 +15,13 @@ router.post(
 	validateRequest(ApplyDoctorZodSchema),
 	DoctorController.applyDoctor,
 );
+router.post(
+	"/apply-as-doctor/verify-email",
+	DoctorController.verifyDoctorEmail,
+);
+router.post(
+	"/approve-doctor",
+	DoctorController.aproveDoctorApplication,
+);
 
-export const DoctorRoute = router;
+export const DoctorRoute = router;
