@@ -17,7 +17,7 @@ import config from "../../config";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import redisClient from "../../lib/redis";
-import ejs, { renderFile } from "ejs";
+import ejs from "ejs";
 import path from "path";
 import { transporter } from "../../lib/nodemailer";
 import { RequestUser } from "../../middleware/checkAuth";
@@ -245,15 +245,15 @@ const aproveDoctorApplication = async (
 	);
 	const templateData = {
 		user: {
-			name: existingDoctor.user.name,
+			name: existingDoctor.user.name, 
 		},
 		doctor: {
-			specialization: existingDoctor.specialization,
+			specialization: existingDoctor.specialization, 
 			licenseNumber: existingDoctor.licenseNumber,
 		},
-		reason: rejectionReason || "Required documents could not be verified.",
+		reason: rejectionReason || "Required documents could not be verified.",  
 	};
-	const html = await renderFile(templatePath, templateData);
+	const html = await ejs.renderFile(templatePath, templateData);
 
 
     await transporter.sendMail({
