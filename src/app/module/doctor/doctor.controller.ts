@@ -3,6 +3,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { DoctorService } from "./doctor.service";
 import { RequestUser } from "../../middleware/checkAuth";
+import { AppError } from "../../utils/AppError";
 
 const applyDoctor = catchAsync(async (req, res) => {
 	const files = req.files as
@@ -13,10 +14,10 @@ const applyDoctor = catchAsync(async (req, res) => {
 	const additionalFiles = files?.["additionalFiles"] || [];
 
 	if (!resumeFile) {
-		throw new Error("Resume file is required");
+		throw new AppError(httpStatus.BAD_REQUEST, "Resume file is required");
 	}
 	if (!additionalFiles) {
-		throw new Error("Additional files are required");
+		throw new AppError(httpStatus.BAD_REQUEST, "Additional files are required");
 	}
 
 	const applyDoctorResult = await DoctorService.applyDoctor(

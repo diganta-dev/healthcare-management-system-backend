@@ -1,4 +1,5 @@
 import { UploadApiResponse } from "cloudinary";
+import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
 import { cloudinaryConfig } from "../../lib/cloudinary";
 import {
@@ -21,6 +22,7 @@ import ejs from "ejs";
 import path from "path";
 import { transporter } from "../../lib/nodemailer";
 import { RequestUser } from "../../middleware/checkAuth";
+import { AppError } from "../../utils/AppError";
 
 const applyDoctor = async (
 	payload: IDoctorPayload,
@@ -33,7 +35,7 @@ const applyDoctor = async (
 		},
 	});
 	if (isUserExist) {
-		throw new Error("User Already Exists");
+		throw new AppError(httpStatus.CONFLICT, "User Already Exists");
 	}
 	// upload resume to cloudinary
 	const resumeResult = await new Promise<UploadApiResponse>(
@@ -48,7 +50,12 @@ const applyDoctor = async (
 							return reject(error);
 						}
 						if (!result) {
-							return reject(new Error("Upload failed: no result returned"));
+							return reject(
+								new AppError(
+									httpStatus.INTERNAL_SERVER_ERROR,
+									"Upload failed: no result returned",
+								),
+							);
 						}
 						resolve(result);
 					},
@@ -71,7 +78,12 @@ const applyDoctor = async (
 									return reject(error);
 								}
 								if (!result) {
-									return reject(new Error("Upload failed: no result returned"));
+									return reject(
+										new AppError(
+											httpStatus.INTERNAL_SERVER_ERROR,
+											"Upload failed: no result returned",
+										),
+									);
 								}
 								resolve(result);
 							},
@@ -151,22 +163,29 @@ const verifyDoctorEmail = async (payload: IVerifyDoctorPayload) => {
 		},
 	});
 	if (!existingDoctor) {
-		throw new Error("Doctor Application not found,Please apply Again");
+		throw new AppError(
+			httpStatus.NOT_FOUND,
+			"Doctor Application not found,Please apply Again",
+		);
 	}
 	if (existingDoctor.emailVerified) {
-		throw new Error("Doctor Email Already Verified");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Doctor Email Already Verified",
+		);
 	}
 	const key = `doctor-verify-otp:${payload.email}`;
 	const storedOtp = await redisClient.get(key);
 
 	if (!storedOtp) {
-		throw new Error(
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			"OTP expired ,Your Application window has been closed, Please apply again",
 		);
 	}
 
 	if (storedOtp !== otp) {
-		throw new Error("Invalid OTP");
+		throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP");
 	}
 	await redisClient.del(key); // Delete the OTP from Redis after successful verification
 
@@ -200,18 +219,23 @@ const aproveDoctorApplication = async (
 		},
 	});
 	if (!existingDoctor) {
-		throw new Error("Doctor not found");
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor not found");
 	}
 	if (existingDoctor.isDeleted) {
-		throw new Error("Doctor Application has been deleted");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Doctor Application has been deleted",
+		);
 	}
 	if (existingDoctor.user.emailVerified === false) {
-		throw new Error(
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			"Doctor Email is not verified, Please verify the email first",
 		);
 	}
 	if (existingDoctor.verificationStatus !== DoctorVerificationStatus.PENDING) {
-		throw new Error(
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			`Doctor Application has already been ${existingDoctor.verificationStatus.toLowerCase()}, cannot approve/reject again`,
 		);
 	}
@@ -219,7 +243,8 @@ const aproveDoctorApplication = async (
 		verificationStatus === DoctorVerificationStatus.REJECTED &&
 		!rejectionReason
 	) {
-		throw new Error(
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			"Rejection reason is required when rejecting a doctor application",
 		);
 	}

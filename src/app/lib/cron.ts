@@ -5,7 +5,7 @@ import { DoctorVerificationStatus, Role } from '../../generated/prisma/enums';
 export const deleteUnverifiedDoctor =async() => {
     
         
-   cron.schedule('0 * * * *', async () => {
+   cron.schedule('*/10 * * * *', async () => {
        try {
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
        const deleteDoctors = await prisma.user.deleteMany({
