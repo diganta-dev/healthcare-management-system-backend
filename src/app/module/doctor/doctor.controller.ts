@@ -48,7 +48,10 @@ const verifyDoctorEmail = catchAsync(async (req, res) => {
 const aproveDoctorApplication = catchAsync(async (req, res) => {
 	const payload = req.body;
 	const reviewer = req.user!;
-	const aproveDoctorResult = await DoctorService.aproveDoctorApplication(payload, reviewer);
+	const aproveDoctorResult = await DoctorService.aproveDoctorApplication(
+		payload,
+		reviewer,
+	);
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,

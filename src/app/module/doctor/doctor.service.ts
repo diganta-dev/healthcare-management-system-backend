@@ -1,8 +1,8 @@
-import { UploadApiResponse } from "cloudinary";
+import type { UploadApiResponse } from "cloudinary";
 import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
 import { cloudinaryConfig } from "../../lib/cloudinary";
-import {
+import type {
 	IApproveDoctorPayload,
 	IDoctorPayload,
 	IGetAllDoctorsPayload,
@@ -21,7 +21,7 @@ import redisClient from "../../lib/redis";
 import ejs from "ejs";
 import path from "path";
 import { transporter } from "../../lib/nodemailer";
-import { RequestUser } from "../../middleware/checkAuth";
+import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 
 const applyDoctor = async (
@@ -169,10 +169,7 @@ const verifyDoctorEmail = async (payload: IVerifyDoctorPayload) => {
 		);
 	}
 	if (existingDoctor.emailVerified) {
-		throw new AppError(
-			httpStatus.BAD_REQUEST,
-			"Doctor Email Already Verified",
-		);
+		throw new AppError(httpStatus.BAD_REQUEST, "Doctor Email Already Verified");
 	}
 	const key = `doctor-verify-otp:${payload.email}`;
 	const storedOtp = await redisClient.get(key);
@@ -270,25 +267,24 @@ const aproveDoctorApplication = async (
 	);
 	const templateData = {
 		user: {
-			name: existingDoctor.user.name, 
+			name: existingDoctor.user.name,
 		},
 		doctor: {
-			specialization: existingDoctor.specialization, 
+			specialization: existingDoctor.specialization,
 			licenseNumber: existingDoctor.licenseNumber,
 		},
-		reason: rejectionReason || "Required documents could not be verified.",  
+		reason: rejectionReason || "Required documents could not be verified.",
 	};
 	const html = await ejs.renderFile(templatePath, templateData);
 
+	await transporter.sendMail({
+		from: config.SENDER_EMAIL_USER,
+		to: existingDoctor.user.email,
+		subject: `Doctor Application ${isApproved ? "Approved" : "Rejected"}`,
+		html: html,
+	});
 
-    await transporter.sendMail({
-        from: config.SENDER_EMAIL_USER,
-        to: existingDoctor.user.email,
-        subject: `Doctor Application ${isApproved ? "Approved" : "Rejected"}`,
-        html: html,
-    });
-    
-    return updatedDoctor;
+	return updatedDoctor;
 };
 
 const getAllDoctors = async (query: IGetAllDoctorsPayload) => {
@@ -457,4 +453,3 @@ export const DoctorService = {
 	aproveDoctorApplication,
 	getAllDoctors,
 };
-

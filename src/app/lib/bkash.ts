@@ -118,7 +118,7 @@ export const getBkashIdToken = async () => {
 		bkashIdToken = result.id_token;
 
 		return bkashIdToken;
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 	} catch (error: any) {
 		throw new Error(error.message);
 	}

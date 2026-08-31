@@ -1,4 +1,4 @@
-import { DoctorVerificationStatus } from "../../../generated/prisma/enums";
+import type { DoctorVerificationStatus } from "../../../generated/prisma/enums";
 
 export interface IDoctorPayload {
 	user: {
@@ -42,4 +42,3 @@ export interface IGetAllDoctorsPayload {
 	sortBy?: string;
 	sortOrder?: "asc" | "desc";
 }
-
