@@ -1,4 +1,4 @@
-import { addDays, differenceInMinutes, startOfDay } from "date-fns";
+import { addDays, differenceInMinutes, isAfter, isSameDay, startOfDay } from "date-fns";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import type { ICreateSchedulePayload, IUpdateSchedulePayload } from "./schedule.interface";
@@ -20,6 +20,12 @@ const createSchedule = async (
 	if (!doctor) {
 		throw new AppError(httpStatus.NOT_FOUND, "Doctor not found");
 	}
+    if(isSameDay(payload.startDateTime, payload.endDateTime) === false){
+        throw new AppError(httpStatus.BAD_REQUEST,"Start date time and end date time must be on the same day");
+    }
+    if(isAfter(payload.startDateTime, payload.endDateTime)){
+        throw new AppError(httpStatus.BAD_REQUEST,"Start date time must be before end date time");
+    }
 	const startOftheDay = startOfDay(payload.startDateTime);
 	const startofTheNextDay = addDays(startOftheDay, 1);
 
@@ -105,10 +111,21 @@ const getMySchedule = async (query: IQuery, user: RequestUser) => {
             }
            }
         }
-        
-    })
+    });
 
-}   
+    const total = await prisma.schedule.count({
+        where: {
+            AND: andConditions
+        },  
+    })
+    return { 
+        data:schedules,
+        total,
+        page,
+        limit,
+        tatalPages: Math.ceil(total / limit)
+    };
+};   
 
 const getAllSchedules = async (query: IQuery, user: RequestUser) => {
     const doctor = await prisma.doctor.findUnique({
@@ -173,7 +190,19 @@ const getAllSchedules = async (query: IQuery, user: RequestUser) => {
         }
         
     })
-    return schedules;
+    const total = await prisma.schedule.count({
+        where: {
+            AND: andConditions
+        },  
+    })
+    
+    return { 
+        data:schedules,
+        total,
+        page,
+        limit,
+        tatalPages: Math.ceil(total / limit)
+    };
 
     
 }
@@ -226,6 +255,12 @@ const updateSchedule = async (scheduleId: string, payload: IUpdateSchedulePayloa
     }
     if(schedule.status === ScheduleStatus.PUBLISHED && schedule.availableSlots !== schedule.totalSlots){
         throw new AppError(httpStatus.BAD_REQUEST,"Cannot update a published schedule and appointments have been booked");
+    }
+    if( payload.startDateTime && payload.endDateTime && isAfter(payload.startDateTime, payload.endDateTime)){
+        throw new AppError(httpStatus.BAD_REQUEST,"Start date time must be before end date time");
+    }
+    if( payload.startDateTime && payload.endDateTime && isSameDay(payload.startDateTime, payload.endDateTime) === false){
+        throw new AppError(httpStatus.BAD_REQUEST,"Start date time and end date time must be on the same day");
     }
     payload.meetingLink = payload.meetingLink || schedule.meetingLink! ;
     payload.startDateTime = payload.startDateTime || schedule.startDateTime;
@@ -380,8 +415,77 @@ const deleteSchedule = async (scheduleId: string, doctorId: string) => {
     return deletedSchedule;
 }
 
+const getToDaySchedules = async (query: IQuery) => {
+     if(!query.doctorId){
+        throw new AppError(httpStatus.BAD_REQUEST,"Doctor Id is required");
+     }
+     const doctor = await prisma.doctor.findUnique({
+        where: {
+            userId: query.doctorId,
+        },
+    });
+    if (!doctor) {
+        throw new AppError(httpStatus.NOT_FOUND, "Doctor not found");
+    }
+     const limit = query.limit ? Number(query.limit) : 10;
+    const page = query.page ? Number(query.page) : 1;
+    const skip = (page - 1) * limit;
+    const searchTerm = query.searchTerm ? query.searchTerm : "";
+    const sortOrder = query.sortOrder ? query.sortOrder : "desc";
+    const sortBy = query.sortBy ? query.sortBy : "startDateTime";
+    const now = new Date();
+    const startOfToday = startOfDay(now);
+    const endOfToday = addDays(startOfToday, 1);
+    const andConditions: scheduleWhereInput[] =[
+        {
+            doctorId: doctor.id
+        },
+        {
+          isDeleted: false
+        },
+        {
+            status: ScheduleStatus.PUBLISHED
+        },
+        {
+            startDateTime: {
+                gte: startOfToday,
+                lt: endOfToday,
+                gt: now
+            }
+        },
+        {
+            availableSlots: {
+                gt: 0
+            }
+        }
+    ]
 
+     const schedules = await prisma.schedule.findMany({
+        where: {
+            AND: andConditions
+        },
+        take: limit,
+        skip: skip,
+        orderBy: {
+            [sortBy]: sortOrder,
+        },
+       
+    });
 
+    const total = await prisma.schedule.count({
+        where: {
+            AND: andConditions
+        },
+    });
+
+    return {
+        data: schedules,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+    };
+};
 
 export const ScheduleService = {
 	createSchedule,
@@ -390,7 +494,9 @@ export const ScheduleService = {
     getScheduleById,
     updateSchedule,
     publishSchedule,
-    deleteSchedule
+    deleteSchedule,
+    getToDaySchedules,
 };
+
 
 
