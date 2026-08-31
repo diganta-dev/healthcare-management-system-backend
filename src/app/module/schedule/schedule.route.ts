@@ -25,5 +25,20 @@ router.get(
     auth(Role.DOCTOR, Role.ADMIN ,Role.DOCTOR),
     ScheduleController.getScheduleById,
 );
+router.put(
+    "/update-schedule/:id",
+    auth(Role.DOCTOR, Role.ADMIN),
+    ScheduleController.updateSchedule,
+);
+router.delete(
+    "/delete-schedule/:id",
+    auth(Role.DOCTOR, Role.ADMIN),
+    ScheduleController.deleteSchedule,
+);
+router.put(
+    "/publish-schedule/:id",
+    auth(Role.DOCTOR, Role.ADMIN),
+    ScheduleController.publishSchedule,
+);
 
 export const ScheduleRoutes = router;

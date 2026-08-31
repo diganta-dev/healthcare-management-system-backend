@@ -47,12 +47,48 @@ const getAllSchedules = catchAsync(async (req, res) => {
         data: result,
     });
 });
+const updateSchedule = catchAsync(async (req, res) => {
+    const { id } = req.params as { id: string };
+    const { userId } = req.user as RequestUser;
+    const updatedSchedule = await ScheduleService.updateSchedule(id, req.body,  userId ); 
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Schedule updated successfully",
+        data: updatedSchedule,
+    });
+});
+const publishSchedule = catchAsync(async (req, res) => {
+    const { id } = req.params as { id: string };
+    const { userId } = req.user as RequestUser;
+    const publishedSchedule = await ScheduleService.publishSchedule(id, userId);
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Schedule published successfully",
+        data: publishedSchedule,
+    });
+});
+const deleteSchedule = catchAsync(async (req, res) => {
+    const { id } = req.params as { id: string };
+    const { userId } = req.user as RequestUser;
+    const deletedSchedule = await ScheduleService.deleteSchedule(id, userId);
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Schedule deleted successfully",
+        data: deletedSchedule,
+    });
+});
 
 export const ScheduleController = {
     createSchedule,
     getMySchedule,
     getScheduleById,
-    getAllSchedules
+    getAllSchedules,
+    updateSchedule,
+    deleteSchedule,
+    publishSchedule
 };
 
 
