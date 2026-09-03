@@ -1,3 +1,3 @@
 type IAppointmentPayload = {
-    scheduleId: string;
+	scheduleId: string;
 };
