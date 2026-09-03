@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Appointment Confirmation</title>
+	</head>
+
+```
+<body
+	style="
+		margin: 0;
+		padding: 0;
+		background-color: #f4f7fb;
+		font-family: Arial, Helvetica, sans-serif;
+		color: #1f2937;
+	"
+>
+	<table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 40px 15px">
+		<tr>
+			<td align="center">
+				<table
+					width="600"
+					cellpadding="0"
+					cellspacing="0"
+					border="0"
+					style="
+						max-width: 600px;
+						width: 100%;
+						background-color: #ffffff;
+						border-radius: 12px;
+						overflow: hidden;
+						box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+					"
+				>
+					<!-- Header -->
+					<tr>
+						<td
+							style="
+								background-color: #2563eb;
+								padding: 32px 30px;
+								text-align: center;
+								color: #ffffff;
+							"
+						>
+							<h1
+								style="
+									margin: 0;
+									font-size: 26px;
+									font-weight: 700;
+								"
+							>
+								Appointment Confirmed
+							</h1>
+
+							<p
+								style="
+									margin: 10px 0 0;
+									font-size: 15px;
+									line-height: 1.5;
+								"
+							>
+								Your appointment has been successfully confirmed.
+							</p>
+						</td>
+					</tr>
+
+					<!-- Main Content -->
+					<tr>
+						<td style="padding: 35px 30px">
+							<p
+								style="
+									margin: 0 0 20px;
+									font-size: 16px;
+									line-height: 1.6;
+								"
+							>
+								Dear <strong><%= patientName %></strong>,
+							</p>
+
+							<p
+								style="
+									margin: 0 0 25px;
+									font-size: 15px;
+									line-height: 1.7;
+									color: #4b5563;
+								"
+							>
+								We are pleased to inform you that your appointment has been
+								successfully confirmed. Please find your appointment details
+								below.
+							</p>
+
+							<!-- Appointment Details -->
+							<table
+								width="100%"
+								cellpadding="0"
+								cellspacing="0"
+								border="0"
+								style="
+									border: 1px solid #e5e7eb;
+									border-radius: 8px;
+									background-color: #fafafa;
+								"
+							>
+								<tr>
+									<td
+										colspan="2"
+										style="
+											padding: 16px 20px;
+											background-color: #eff6ff;
+											border-bottom: 1px solid #dbeafe;
+											font-size: 18px;
+											font-weight: 700;
+											color: #1e40af;
+										"
+									>
+										Appointment Details
+									</td>
+								</tr>
+
+								<tr>
+									<td
+										style="
+											padding: 16px 20px;
+											width: 45%;
+											font-size: 14px;
+											font-weight: 600;
+											color: #374151;
+										"
+									>
+										Doctor
+									</td>
+
+									<td
+										style="
+											padding: 16px 20px;
+											font-size: 14px;
+											color: #4b5563;
+										"
+									>
+										<%= doctorName %>
+									</td>
+								</tr>
+
+								<tr>
+									<td
+										style="
+											padding: 16px 20px;
+											border-top: 1px solid #e5e7eb;
+											font-size: 14px;
+											font-weight: 600;
+											color: #374151;
+										"
+									>
+										Serial Number
+									</td>
+
+									<td
+										style="
+											padding: 16px 20px;
+											border-top: 1px solid #e5e7eb;
+											font-size: 14px;
+											color: #4b5563;
+										"
+									>
+										#<%= serialNumber %>
+									</td>
+								</tr>
+
+								<tr>
+									<td
+										style="
+											padding: 16px 20px;
+											border-top: 1px solid #e5e7eb;
+											font-size: 14px;
+											font-weight: 600;
+											color: #374151;
+										"
+									>
+										Appointment Time
+									</td>
+
+									<td
+										style="
+											padding: 16px 20px;
+											border-top: 1px solid #e5e7eb;
+											font-size: 14px;
+											color: #4b5563;
+										"
+									>
+										<%= appointmentTime %>
+									</td>
+								</tr>
+							</table>
+
+							<p
+								style="
+									margin: 25px 0 0;
+									font-size: 14px;
+									line-height: 1.7;
+									color: #6b7280;
+								"
+							>
+								Please arrive on time for your appointment. We recommend
+								joining a few minutes before your scheduled time.
+							</p>
+
+							<p
+								style="
+									margin: 30px 0 0;
+									font-size: 15px;
+									line-height: 1.7;
+									color: #374151;
+								"
+							>
+								Thank you for choosing our healthcare service.
+								<br /><br />
+								<strong>Healthcare Management Team</strong>
+							</p>
+						</td>
+					</tr>
+
+					<!-- Footer -->
+					<tr>
+						<td
+							style="
+								padding: 20px;
+								background-color: #f8fafc;
+								text-align: center;
+								border-top: 1px solid #e5e7eb;
+							"
+						>
+							<p
+								style="
+									margin: 0;
+									font-size: 12px;
+									line-height: 1.6;
+									color: #9ca3af;
+								"
+							>
+								This is an automated confirmation email. Please do not reply
+								directly to this message.
+							</p>
+
+							<p
+								style="
+									margin: 8px 0 0;
+									font-size: 12px;
+									color: #9ca3af;
+								"
+							>
+								© Healthcare Management System. All rights reserved.
+							</p>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+```
+
+</html>
