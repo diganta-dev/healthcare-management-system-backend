@@ -21,7 +21,7 @@ export const validateRequest = (zodSchema: ZodTypeAny) => {
 				.join(", ");
 			throw new Error(errorMessages);
 		}
-		req.body = result.data; 
+		req.body = result.data;
 		next();
 	});
 };

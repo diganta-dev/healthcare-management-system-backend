@@ -1,3 +1,4 @@
+import httpStatus from "http-status";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
@@ -11,7 +12,7 @@ const bookAppointment = catchAsync(async (req, res) => {
 	);
 	sendResponse(res, {
 		success: true,
-		statusCode: 200,
+		statusCode: httpStatus.OK,
 		message: "Appointment Payment Initiated Successfully",
 		data: appointmentData,
 	});
@@ -24,7 +25,7 @@ const payAppointment = catchAsync(async (req, res) => {
 	);
 	sendResponse(res, {
 		success: true,
-		statusCode: 200,
+		statusCode: httpStatus.OK,
 		message: "Appointment Payment Initiated Successfully",
 		data: appointmentData,
 	});
@@ -37,7 +38,7 @@ const cancelAppointment = catchAsync(async (req, res) => {
 	);
 	sendResponse(res, {
 		success: true,
-		statusCode: 200,
+		statusCode: httpStatus.OK,
 		message: "Appointment Cancelled Successfully and Refund ",
 		data: refundData,
 	});

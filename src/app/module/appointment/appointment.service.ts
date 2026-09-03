@@ -1,3 +1,4 @@
+import httpStatus from "http-status";
 import {
 	AppointmentStatus,
 	PaymentStatus,
@@ -6,18 +7,109 @@ import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
 import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
+import { AppError } from "../../utils/AppError";
+import { addMinutes, isAfter, isBefore, isSameDay } from "date-fns";
+import { transporter } from "../../lib/nodemailer";
+import path from "path";
+import ejs from "ejs";
+import PDFDocument from "pdfkit";
 
-const bookAppointment = async (payload: IAppointment, user: RequestUser) => {
+const bookAppointment = async (payload: IAppointmentPayload, user: RequestUser) => {
 	const transactionResult = await prisma.$transaction(async (tx) => {
+		const patient = await tx.patient.findUnique({
+			where: {
+				userId: user.userId,
+			},
+		});
+		if (!patient) {
+			throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+		}
+		
+		const schedule = await tx.schedule.findUnique({
+			where: {
+				id: payload.scheduleId,
+			},
+			include: {
+				doctor: true,
+			},
+		});
+		if (!schedule || schedule.isDeleted) {
+			throw new AppError(httpStatus.NOT_FOUND, "Schedule not found");
+		}
+		if(schedule.status !== "PUBLISHED") {
+			throw new AppError(httpStatus.BAD_REQUEST, "Schedule is not published");
+		}
+		const now = new Date();
+		if(!isSameDay(now,schedule.startDateTime)) {
+			throw new AppError(httpStatus.BAD_REQUEST, "This is not Available Schedule for Today");
+		}
+		if(!isBefore(now,schedule.startDateTime)) {
+			throw new AppError(httpStatus.BAD_REQUEST, "This Schedule is Already Started");
+		}
+
+		const existingAppointment = await tx.appointment.findFirst({
+			where: {
+				scheduleId: payload.scheduleId,
+				patientId: patient.id,
+			}
+			
+		});
+		if (existingAppointment?.status === AppointmentStatus.PENDING ) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"You have already booked an appointment for this schedule and it is pending payment. Please complete the payment to confirm your appointment.",
+			);
+		}
+		if(existingAppointment?.status === AppointmentStatus.ONGOING) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"You have already booked an appointment for this schedule and it is ongoing. Please wait until the appointment is completed.",
+			);
+		}
+		if(existingAppointment?.status === AppointmentStatus.CONFIRMED) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"You have already booked an appointment for this schedule and it is confirmed. Please wait until the appointment is completed.",
+			);
+		} 
+		if(existingAppointment?.status === AppointmentStatus.COMPLETED) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"You have already booked an appointment for this schedule and it is completed. Please wait until the appointment is completed.",
+			);
+		} 
+		if(schedule.availableSlots===0) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"No available slots for this schedule. Please choose another schedule.",
+			);
+		}
+		if(!schedule.doctor.consultationFee) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Consultation fee is not set for this schedule. Please contact the administrator.",
+			);
+		}
+
+
+		const amount = schedule.doctor.consultationFee.toString();
+
 		const appointment = await tx.appointment.create({
 			data: {
 				status: AppointmentStatus.PENDING,
+				scheduleId: payload.scheduleId,
+				patientId: patient.id,
+				doctorId: schedule.doctorId,
+				
 			},
 		});
 
 		const idToken = await getBkashIdToken();
 		if (!idToken) {
-			throw new Error("Failed to get bKash id token");
+			throw new AppError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				"Failed to get bKash id token",
+			);
 		}
 		const createBkashPaymentResponse = await fetch(
 			`${config.bkash_base_url}/tokenized/checkout/create`,
@@ -35,7 +127,7 @@ const bookAppointment = async (payload: IAppointment, user: RequestUser) => {
 					payerReference: user.email, //user phone number or email
 					callbackURL: `${config.bkash_callback_url}/appointment/book-appointment/payment/callback`,
 					merchantAssociationInfo: "MI05MID54RF09123456One",
-					amount: "1200",
+					amount: amount,
 					currency: "BDT",
 					intent: "sale",
 					merchantInvoiceNumber: appointment.id, //appointment id
@@ -44,7 +136,10 @@ const bookAppointment = async (payload: IAppointment, user: RequestUser) => {
 		);
 
 		if (!createBkashPaymentResponse.ok) {
-			throw new Error("Failed to create bKash payment");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Failed to create bKash payment",
+			);
 		}
 
 		const bkashCreatePaymentResult = await createBkashPaymentResponse.json();
@@ -72,17 +167,37 @@ const payAppointment = async (payload: any, user: RequestUser) => {
 		where: {
 			id: appointmentId,
 		},
+		include:{
+			schedule:{
+				include:{
+					doctor:true
+				}
+			},
+		}
 	});
 	if (!appointment) {
-		throw new Error("Appointment not found");
+		throw new AppError(httpStatus.NOT_FOUND, "Appointment not found");
 	}
 	if (appointment.status !== AppointmentStatus.PENDING) {
-		throw new Error("Appointment is not in pending status");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Appointment is not in pending status",
+		);
 	}
 	const idToken = await getBkashIdToken();
 	if (!idToken) {
-		throw new Error("Failed to get bKash id token");
+		throw new AppError(
+			httpStatus.INTERNAL_SERVER_ERROR,
+			"Failed to get bKash id token",
+		);
 	}
+	if(!appointment.schedule.doctor.consultationFee) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Consultation fee is not set for this schedule. Please contact the administrator.",
+			);
+		}
+	const amount = appointment.schedule.doctor.consultationFee.toString();
 	const createBkashPaymentResponse = await fetch(
 		`${config.bkash_base_url}/tokenized/checkout/create`,
 		{
@@ -99,7 +214,7 @@ const payAppointment = async (payload: any, user: RequestUser) => {
 				payerReference: user.email, //user phone number or email
 				callbackURL: `${config.bkash_callback_url}/appointment/book-appointment/payment/callback`,
 				merchantAssociationInfo: "MI05MID54RF09123456One",
-				amount: "1200",
+				amount: amount,
 				currency: "BDT",
 				intent: "sale",
 				merchantInvoiceNumber: appointment.id, //appointment id
@@ -108,7 +223,10 @@ const payAppointment = async (payload: any, user: RequestUser) => {
 	);
 
 	if (!createBkashPaymentResponse.ok) {
-		throw new Error("Failed to create bKash payment");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Failed to create bKash payment",
+		);
 	}
 
 	const bkashCreatePaymentResult = await createBkashPaymentResponse.json();
@@ -138,18 +256,22 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 			},
 		});
 		if (!appointment) {
-			throw new Error("Appointment not found");
+			throw new AppError(httpStatus.NOT_FOUND, "Appointment not found");
 		}
 		if (
 			appointment.status === "ONGOING" ||
 			appointment.status === "COMPLETED"
 		) {
-			throw new Error(
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
 				"Appointment cannot be cancelled as it is either ongoing or completed",
 			);
 		}
 		if (appointment.status === "CANCELLED") {
-			throw new Error("Appointment is already cancelled");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Appointment is already cancelled",
+			);
 		}
 		const updatedAppointment = await tx.appointment.update({
 			where: {
@@ -162,7 +284,10 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 
 		const idToken = await getBkashIdToken();
 		if (!idToken) {
-			throw new Error("Failed to get bKash id token");
+			throw new AppError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				"Failed to get bKash id token",
+			);
 		}
 		const refundBkashPaymentResponse = await fetch(
 			`${config.bkash_base_url}/tokenized/checkout/payment/refund`,
@@ -185,7 +310,10 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 		);
 
 		if (!refundBkashPaymentResponse.ok) {
-			throw new Error("Failed to refund bKash payment");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Failed to refund bKash payment",
+			);
 		}
 
 		const bkashRefundPaymentResult = await refundBkashPaymentResponse.json();
@@ -217,17 +345,20 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 		const status = query.status;
 
 		if (!paymentId) {
-			throw new Error("Payment Id Missing");
+			throw new AppError(httpStatus.BAD_REQUEST, "Payment Id Missing");
 		}
 
 		if (!status) {
-			throw new Error("Payment Status is Missing");
+			throw new AppError(httpStatus.BAD_REQUEST, "Payment Status is Missing");
 		}
 
 		if (status === "success") {
 			const idToken = await getBkashIdToken();
 			if (!idToken) {
-				throw new Error("Failed to get bKash id token");
+				throw new AppError(
+					httpStatus.INTERNAL_SERVER_ERROR,
+					"Failed to get bKash id token",
+				);
 			}
 			const executeBkashPayment = await fetch(
 				`${config.bkash_base_url}/tokenized/checkout/execute`,
@@ -245,7 +376,10 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 				},
 			);
 			if (!executeBkashPayment.ok) {
-				throw new Error("Failed to execute bKash payment");
+				throw new AppError(
+					httpStatus.BAD_REQUEST,
+					"Failed to execute bKash payment",
+				);
 			}
 			const executeBkashPaymentResult = await executeBkashPayment.json();
 
@@ -253,7 +387,7 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 				executeBkashPaymentResult.statusCode &&
 				executeBkashPaymentResult.statusCode !== "0000"
 			) {
-				await tx.payment.update({
+					await tx.payment.update({
 					where: {
 						bkashPaymentId: paymentId,
 					},
@@ -266,6 +400,29 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 					redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=failure&message=${executeBkashPaymentResult.statusMessage}`,
 				};
 			}
+			const appointment = await tx.appointment.findUnique({
+					where: {
+						id: executeBkashPaymentResult.merchantInvoiceNumber,
+					},
+					include: {
+                       schedule:true,
+					   patient:true,
+					   doctor:true
+					}
+				});
+
+				if(!appointment) {
+					throw new AppError(
+						httpStatus.NOT_FOUND,
+						"Appointment not found",
+					);
+				}
+				const newAvailableSlots = appointment.schedule.availableSlots - 1;
+
+				const allreadyBookedSlots = appointment.schedule.totalSlots-appointment.schedule.availableSlots;
+				const serailNumber = allreadyBookedSlots + 1;
+				const joiningTime = addMinutes(appointment.schedule.startDateTime,(serailNumber-1)*20);
+
 
 			await tx.appointment.update({
 				where: {
@@ -273,6 +430,17 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 				},
 				data: {
 					status: AppointmentStatus.CONFIRMED,
+					joiningTime: joiningTime,
+					serialNumber: serailNumber,
+
+				},
+			});
+			await tx.schedule.update({
+				where: {
+					id: appointment.schedule.id,
+				},
+				data: {
+					availableSlots: newAvailableSlots,
 				},
 			});
 			await tx.payment.update({
@@ -287,6 +455,109 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 					gatewayResponse: executeBkashPaymentResult,
 				},
 			});
+
+			// Generate PDF confirmation
+             
+			const pdfDocument = new PDFDocument({margin:50});
+			const pdfChunks: Buffer[] = [];
+			pdfDocument.on("data", (chunk) => {
+				pdfChunks.push(chunk);
+			});
+			const pdfReadyPromise = new Promise<Buffer>((resolve)=>{
+				pdfDocument.on("end", () => {
+					resolve(Buffer.concat(pdfChunks));
+				})
+			})
+
+			pdfDocument.fontSize(22)
+				.font("Helvetica-Bold")
+				.text("APPOINTMENT CONFIRMATION", {
+					align: "center",
+				});
+
+			pdfDocument.moveDown(2);
+
+			pdfDocument
+				.fontSize(12)
+				.font("Helvetica")
+				.text(`Patient Name: ${appointment.patient.name}`)
+				.moveDown(0.5)
+				.text(`Doctor Name: ${appointment.doctor.name}`)
+				.moveDown(0.5)
+				.text(`Serial Number: ${serailNumber}`)
+				.moveDown(0.5)
+				.text(
+					`Appointment Time: ${joiningTime.toLocaleString()}`,
+				)
+				.moveDown(0.5)
+				.text(
+					`Meeting Link: ${appointment.schedule.meetingLink}`,
+				);
+
+			pdfDocument.moveDown(2); 
+
+			pdfDocument.text(`Amount Paid: ${executeBkashPaymentResult.amount} BDT`, {
+					align: "left",
+				});
+				pdfDocument.text(`Payment Method: bKash`, {
+					align: "left",
+				});
+				pdfDocument.text(`Transaction ID: ${executeBkashPaymentResult.trxID}`, {
+					align: "left",
+				});
+				pdfDocument.text(`Payment Date: ${new Date(executeBkashPaymentResult.paymentExecuteTime).toLocaleString()}`, {
+					align: "left",
+				});
+				pdfDocument.moveDown(2);
+
+			pdfDocument
+				.fontSize(11)
+				.text(
+					"Your appointment has been successfully confirmed.",
+					{
+						align: "center",
+					},
+				);
+
+			pdfDocument.moveDown(3);
+
+			pdfDocument
+				.fontSize(10)
+				.text("Thank you for using our healthcare service.", {
+					align: "center",
+				});
+
+			// PDF complete
+			pdfDocument.end();
+			const pdfBuffer = await pdfReadyPromise as Buffer;
+
+
+
+
+           
+
+			const templatePath = path.join(
+					process.cwd(),
+					"src/app/templates/appointment-confirmation.ejs",
+				);
+             const html = await ejs.renderFile(templatePath, {
+	             patientName: appointment.patient.name,
+	            doctorName: appointment.doctor.name,
+	            serialNumber: appointment.serialNumber,
+	            appointmentTime: appointment.joiningTime
+				,
+});
+			await transporter.sendMail({
+				from: config.SENDER_EMAIL_USER,
+				to:appointment.patient.email,
+				subject: "Appointment Confirmation", 
+				html: html,
+				attachments: [{
+					filename:"invoice.pdf",
+					content: pdfBuffer,
+					contentType: "application/pdf"
+				}]
+			})
 			return {
 				redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=success`,
 			};

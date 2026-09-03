@@ -87,7 +87,6 @@ export const seedTesterAdmin = async () => {
 				role: Role.ADMIN,
 				needPasswordChange: false,
 				emailVerified: true,
-				
 			},
 		});
 
@@ -141,16 +140,16 @@ export const seedTesterDoctor = async () => {
 				role: Role.DOCTOR,
 				needPasswordChange: false,
 				emailVerified: true,
-				doctors:{
+				doctors: {
 					create: {
 						email,
 						name,
 						experienceYears: 5,
-						licenseNumber:"DMC-123456",
+						licenseNumber: "DMC-123456",
 						qualifications: "MBBS",
-						specialization: "General Physician"
-					}
-				}
+						specialization: "General Physician",
+					},
+				},
 			},
 		});
 
