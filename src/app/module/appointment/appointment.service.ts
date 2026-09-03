@@ -2,17 +2,21 @@ import httpStatus from "http-status";
 import {
 	AppointmentStatus,
 	PaymentStatus,
+	Role,
 } from "../../../generated/prisma/browser";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
 import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
-import { addMinutes, isAfter, isBefore, isSameDay, subHours } from "date-fns";
+import { addMinutes, isBefore, isSameDay, subHours } from "date-fns";
 import { transporter } from "../../lib/nodemailer";
 import path from "path";
 import ejs from "ejs";
 import PDFDocument from "pdfkit";
+import type { IAppointmentPayload, IPaymentAppointmentPayload, IUpdateAppointmentPayload } from "./appointment.interface";
+import { IQuery } from "../../interfaces/global.interface";
+import { AppointmentWhereInput } from "../../../generated/prisma/models";
 
 const bookAppointment = async (
 	payload: IAppointmentPayload,
@@ -167,7 +171,7 @@ const bookAppointment = async (
 	return transactionResult;
 };
 
-const payAppointment = async (payload: any, user: RequestUser) => {
+const payAppointment = async (payload: IPaymentAppointmentPayload, user: RequestUser) => {
 	const appointmentId = payload.appointmentId;
 	const appointment = await prisma.appointment.findUnique({
 		where: {
@@ -371,8 +375,9 @@ const cancelAppointment = async (appointmentId: string, user: RequestUser) => {
 	return transactionResult;
 };
 
+
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const bookAppointmentPaymentCallback = async (query: any) => {
+const bookAppointmentPaymentCallback = async (query: Record<string, any>) => {
 	const transactionResult = await prisma.$transaction(async (tx) => {
 		const paymentId = query.paymentID;
 		const status = query.status;
@@ -617,11 +622,335 @@ const bookAppointmentPaymentCallback = async (query: any) => {
 		}
 	});
 	return transactionResult;
-};
+}; 
+
+const updateAppointmentStatus = async (user:RequestUser, payload: IUpdateAppointmentPayload,appointmentId: string) => {
+    const doctor = await prisma.doctor.findUnique({
+		where: {
+			userId: user.userId,	
+			
+		}
+	});
+	if (!doctor) {
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor not found");
+	}
+	
+	const appointment = await prisma.appointment.findUnique({
+		where: {
+			id: appointmentId,
+			doctorId: doctor.id,
+		},
+	}); 
+	if(!appointment){
+		throw new AppError(httpStatus.NOT_FOUND, "Appointment not found");
+	}
+	if(appointment.status === AppointmentStatus.COMPLETED){
+		throw new AppError(httpStatus.BAD_REQUEST, "Appointment is already completed");
+	}
+	if(appointment.status === AppointmentStatus.CANCELLED){
+		throw new AppError(httpStatus.BAD_REQUEST, "Appointment is cancelled, you cannot update it");
+	}
+	if(appointment.status=== AppointmentStatus.PENDING){
+		
+			throw new AppError(httpStatus.BAD_REQUEST, "Appointment is pending, you can only update it to confirmed");
+		
+	}
+	if(appointment.status === AppointmentStatus.CONFIRMED){
+		if(payload.status !== AppointmentStatus.ONGOING){
+              throw new AppError(httpStatus.BAD_REQUEST, "Appointment is confirmed, you can only update it to ongoing before the appointment is completed");
+		}
+	}
+	await prisma.appointment.update({
+		where: {
+			id: appointmentId,
+		},
+		data: {
+			status: AppointmentStatus.ONGOING,
+		},
+	});
+
+	if(appointment.status ===AppointmentStatus.ONGOING){
+		if(payload.status !== AppointmentStatus.COMPLETED){
+			throw new AppError(httpStatus.BAD_REQUEST, "Appointment is ongoing, you can only update it to completed");
+		}
+		await prisma.appointment.update({
+			where: {
+				id: appointmentId,
+			},
+			data: {
+				status: AppointmentStatus.COMPLETED,
+			},
+		});
+	}
+	const updatedAppointment = await prisma.appointment.findUnique({
+		where: {
+			id: appointmentId,
+		},
+	});
+	return updatedAppointment;
+	
+	
+	
+}
+// patient my appointments
+const getMyAppointments = async (user: RequestUser,query:IQuery) => {
+    const limit = query.limit ? Number(query.limit) : 10;
+	const page = query.page ? Number(query.page) : 1;
+	const skip = (page - 1) * limit;
+	
+	const patient = await prisma.patient.findUnique({
+		where: {
+			userId: user.userId,
+		},
+	});
+	if (!patient) {
+		throw new AppError(httpStatus.NOT_FOUND, "Patient not found");
+	}
+	const andConditions: AppointmentWhereInput[] = [
+		{
+			patientId: patient.id,
+		}
+	];
+	if(query.status){
+		andConditions.push({
+			status: query.status as AppointmentStatus,
+		});
+	} 
+	const appointments = await prisma.appointment.findMany({
+		where: {
+			AND: andConditions,
+		},
+		take: limit,
+		skip: skip,
+		orderBy: {
+			createdAt: "desc",
+		},
+		include: {
+			schedule: true,
+			doctor: {
+				select: {
+					name: true,
+					email: true,
+					consultationFee: true,
+					specialization: true,
+				},
+			},
+			
+			payment: true,
+		},
+	});
+	const totalAppointments = await prisma.appointment.count({
+		where: {
+			AND: andConditions,
+		},
+	});
+	const totalPages = Math.ceil(totalAppointments / limit);
+	return {
+		appointments,
+		totalAppointments,
+		totalPages,
+		currentPage: page,
+	};	
+
+}
+// doctor appointments
+const getDoctorAppointments = async (user: RequestUser, query: IQuery) => {
+	const limit = query.limit ? Number(query.limit) : 10;
+	const page = query.page ? Number(query.page) : 1;
+	const skip = (page - 1) * limit;
+	const doctor = await prisma.doctor.findUnique({
+		where: {
+			userId: user.userId,
+		},
+	});
+	if (!doctor) {
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor not found");
+	}
+	const andConditions: AppointmentWhereInput[] = [
+		{
+			doctorId: doctor.id,
+		}
+	];
+	if(query.status){
+		andConditions.push({
+			status: query.status as AppointmentStatus,
+		});
+	} 
+	const appointments = await prisma.appointment.findMany({
+		where: {
+			AND: andConditions,
+		},
+		take: limit,
+		skip: skip,
+		orderBy: {
+			createdAt: "desc",
+		},
+		include: {
+			schedule: true,
+			patient: {
+				select: {
+					name: true,
+					email: true,
+					id: true,
+					contactNumber: true,
+				},
+			},
+			payment: true,
+			
+		},
+		
+	});
+	const totalAppointments = await prisma.appointment.count({
+		where: {
+			AND: andConditions,
+		},
+	});
+	const totalPages = Math.ceil(totalAppointments / limit);
+	return {
+		appointments,
+		totalAppointments,
+		totalPages,
+		currentPage: page,
+	};
+}
+// admin all appointments
+const getAllAppointments = async (query: IQuery) => {
+      const limit = query.limit ? Number(query.limit) : 10;
+	const page = query.page ? Number(query.page) : 1;
+	const skip = (page - 1) * limit;
+	const andConditions: AppointmentWhereInput[] = [];
+	if(query.status){
+		andConditions.push({
+			status: query.status as AppointmentStatus,
+		});
+	}
+	if(query.doctorId){
+		andConditions.push({
+			doctorId: query.doctorId,
+		});
+	}
+	if(query.patientId){
+		andConditions.push({
+			patientId: query.patientId,
+		});
+	}
+	if(query.doctorEmail){
+		andConditions.push({
+			doctor: {
+				email: query.doctorEmail,
+			},
+		});
+	}
+	if(query.patientEmail){
+		andConditions.push({
+			patient: {
+				email: query.patientEmail,
+			},
+		});
+	}
+	const appointments = await prisma.appointment.findMany({
+		where: {
+			AND: andConditions,
+		},
+		take: limit,
+		skip: skip,
+		orderBy: {
+			createdAt: "desc",
+		},
+		include: {
+			schedule: true,
+			doctor: {
+				select: {
+					name: true,
+					email: true,
+					id: true,
+					specialization: true,
+				},
+			},
+			patient: {
+				select: {
+					name: true,
+					email: true,
+					id: true,
+					contactNumber: true,
+				},
+			},
+			payment: true,
+			
+		},
+		
+	});
+	const totalAppointments = await prisma.appointment.count({
+		where: {
+			AND: andConditions,
+		},
+	});
+	const totalPages = Math.ceil(totalAppointments / limit);
+	return {
+		appointments,
+		totalAppointments,
+		totalPages,
+		currentPage: page,
+	};	
+
+}
+// get single appointment
+const getSingleAppointment = async (user: RequestUser, appointmentId: string) => {
+	const appointment = await prisma.appointment.findUnique({
+		where: {
+			id: appointmentId,
+		},
+		include: {
+			schedule: true,
+			doctor: {
+				select: {
+					name: true,
+					email: true,
+				    userId: true,
+					specialization: true,
+				},
+			},
+			patient: {
+				select: {
+					name: true,
+					email: true,
+					userId: true,
+					contactNumber: true,
+				},
+			},
+			payment: true,
+			
+		},
+		
+	});
+	if (!appointment) {
+		throw new AppError(httpStatus.NOT_FOUND, "Appointment not found");
+	}
+	if(user.role === Role.PATIENT){
+
+		if(appointment.patient.userId !==user.userId ){
+		throw new AppError(httpStatus.FORBIDDEN, "You are not the owner of this appointment");
+	}
+	}
+	if(user.role === Role.DOCTOR){
+		if(appointment.doctor.userId !==user.userId ){
+		throw new AppError(httpStatus.FORBIDDEN, "You are not the owner of this appointment");
+	}
+	}
+
+ return appointment;
+}
+
+
 
 export const AppointmentService = {
 	bookAppointment,
 	payAppointment,
 	bookAppointmentPaymentCallback,
 	cancelAppointment,
+	updateAppointmentStatus,
+	getMyAppointments,
+	getDoctorAppointments,
+	getAllAppointments,
+	getSingleAppointment
 };

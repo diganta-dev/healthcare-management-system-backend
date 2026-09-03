@@ -50,10 +50,83 @@ const bookAppointmentPaymentCallback = catchAsync(async (req, res) => {
 	const { redirectUrl } = appointmentData;
 	res.redirect(redirectUrl);
 });
+const updateAppointmentStatus = catchAsync(async (req, res) => {
+	const payload = req.body;
+	const appointmentId = req.params.appointmentId as string;
+	const appointmentData = await AppointmentService.updateAppointmentStatus(
+		
+		req.user as RequestUser,
+		payload,
+		appointmentId
+
+	);
+	sendResponse(res, {
+		success: true,
+		statusCode: httpStatus.OK,
+		message: "Appointment Status Updated Successfully",
+		data: appointmentData,
+	});
+});
+const getMyAppointments = catchAsync(async (req, res) => {
+	const query = req.query;
+	const appointments = await AppointmentService.getMyAppointments(
+		req.user as RequestUser,
+		query,
+	);
+	sendResponse(res, {
+		success: true,
+		statusCode: httpStatus.OK,
+		message: "Appointments fetched successfully",
+		data: appointments,
+	});
+});
+const getDoctorAppointments = catchAsync(async (req, res) => {
+	const query = req.query;
+	const appointments = await AppointmentService.getDoctorAppointments(
+		req.user as RequestUser,
+		query,
+	);
+	sendResponse(res, {
+		success: true,
+		statusCode: httpStatus.OK,
+		message: "Appointments fetched successfully",
+		data: appointments,
+	});
+});
+const getAllAppointments = catchAsync(async (req, res) => {
+	const query = req.query;
+	const appointments = await AppointmentService.getAllAppointments(
+		query,
+	);
+	sendResponse(res, {
+		success: true,
+		statusCode: httpStatus.OK,
+		message: "Appointments fetched successfully",
+		data: appointments,
+	});
+});
+const getAppointmentById = catchAsync(async (req, res) => {
+	const appointmentId = req.params.appointmentId as string;
+	const appointment = await AppointmentService.getSingleAppointment(
+		req.user as RequestUser,
+		appointmentId,
+	);
+	sendResponse(res, {
+		success: true,
+		statusCode: httpStatus.OK,
+		message: "Appointment fetched successfully",
+		data: appointment,
+	});
+});
 
 export const AppointmentController = {
 	bookAppointment,
 	payAppointment,
 	bookAppointmentPaymentCallback,
 	cancelAppointment,
+	updateAppointmentStatus,
+	getMyAppointments,
+	getDoctorAppointments,
+	getAllAppointments,
+	getAppointmentById
 };
