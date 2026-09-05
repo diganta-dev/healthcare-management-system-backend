@@ -1,0 +1,544 @@
+﻿{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Healthcare Backend API",
+    "description": "Complete API collection for Healthcare Management System.\n\nBase URL: http://localhost:5000/api/v1\n\nSet the appropriate *Token variable after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",        "value": "http://localhost:5000/api/v1", "type": "string" },
+    { "key": "patientToken",   "value": "", "type": "string" },
+    { "key": "doctorToken",    "value": "", "type": "string" },
+    { "key": "adminToken",     "value": "", "type": "string" },
+    { "key": "superAdminToken","value": "", "type": "string" },
+    { "key": "doctorId",       "value": "", "type": "string" },
+    { "key": "scheduleId",     "value": "", "type": "string" },
+    { "key": "appointmentId",  "value": "", "type": "string" },
+    { "key": "paymentId",      "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Patient",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\",\n  \"patient\": { \"contactNumber\": \"+8801712345678\" }\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Verify Patient Email (OTP)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/verify-email", "host": ["{{baseUrl}}"], "path": ["auth","verify-email"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"123456\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Get Me (Profile)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth","me"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["auth","refresh-token"] }
+          }
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/google", "host": ["{{baseUrl}}"], "path": ["auth","google"] },
+            "body": { "mode": "raw", "raw": "{\n  \"idToken\": \"<GOOGLE_ID_TOKEN_FROM_FRONTEND>\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth","forgot-password"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john.doe@example.com\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth","reset-password"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"654321\",\n  \"newPassword\": \"NewPassword@456\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Upload Profile Image",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/user/profile-image", "host": ["{{baseUrl}}"], "path": ["user","profile-image"] },
+            "body": { "mode": "formdata", "formdata": [{ "key": "profileImage", "type": "file", "src": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctor",
+      "item": [
+        {
+          "name": "Apply as Doctor",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/doctor/apply-as-doctor", "host": ["{{baseUrl}}"], "path": ["doctor","apply-as-doctor"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "data", "value": "{\n  \"user\": {\n    \"name\": \"Dr. Sarah Ahmed\",\n    \"email\": \"dr.sarah@example.com\"\n  },\n  \"doctor\": {\n    \"specialization\": \"Cardiology\",\n    \"licenseNumber\": \"BD-CARD-20190045\",\n    \"qualifications\": \"MBBS, MD (Cardiology), FCPS\",\n    \"experienceYears\": 8,\n    \"bio\": \"Specialist in interventional cardiology with 8 years experience.\",\n    \"consultationFee\": 1500.00,\n    \"contactNumber\": \"+8801811223344\"\n  }\n}", "type": "text" },
+                { "key": "resume", "type": "file", "src": "" },
+                { "key": "additionalFiles", "type": "file", "src": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify Doctor Email (OTP)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/doctor/apply-as-doctor/verify-email", "host": ["{{baseUrl}}"], "path": ["doctor","apply-as-doctor","verify-email"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"dr.sarah@example.com\",\n  \"otp\": \"789012\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Approve Doctor Application (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/doctor/approve-doctor", "host": ["{{baseUrl}}"], "path": ["doctor","approve-doctor"] },
+            "body": { "mode": "raw", "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"verificationStatus\": \"APPROVED\",\n  \"rejectionReason\": \"\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Reject Doctor Application (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/doctor/approve-doctor", "host": ["{{baseUrl}}"], "path": ["doctor","approve-doctor"] },
+            "body": { "mode": "raw", "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"verificationStatus\": \"REJECTED\",\n  \"rejectionReason\": \"Provided license number could not be verified with the medical board.\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Get All Doctors (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/all-doctors?page=1&limit=10&verificationStatus=PENDING&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor","all-doctors"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "searchTerm", "value": "", "disabled": true },
+                { "key": "specialization", "value": "", "disabled": true },
+                { "key": "verificationStatus", "value": "PENDING" },
+                { "key": "address", "value": "", "disabled": true },
+                { "key": "qualifications", "value": "", "disabled": true },
+                { "key": "experienceYears", "value": "", "disabled": true },
+                { "key": "minConsultationFee", "value": "", "disabled": true },
+                { "key": "maxConsultationFee", "value": "", "disabled": true },
+                { "key": "isDeleted", "value": "", "disabled": true },
+                { "key": "sortBy", "value": "createdAt" },
+                { "key": "sortOrder", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Doctor Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/doctor/update-doctor-profile", "host": ["{{baseUrl}}"], "path": ["doctor","update-doctor-profile"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "data", "value": "{\n  \"user\": { \"name\": \"Dr. Sarah Ahmed Khan\" },\n  \"doctor\": {\n    \"bio\": \"Updated bio: 9 years in interventional cardiology.\",\n    \"consultationFee\": 1800,\n    \"address\": \"123 Heart Street, Dhaka\",\n    \"contactNumber\": \"+8801811223355\",\n    \"experienceYears\": 9\n  }\n}", "type": "text" },
+                { "key": "profilePicture", "type": "file", "src": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "[PUBLIC] List All Approved Doctors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/public/doctors?page=1&limit=10&specialization=Cardiology&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor","public","doctors"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "searchTerm", "value": "", "disabled": true },
+                { "key": "specialization", "value": "Cardiology" },
+                { "key": "address", "value": "", "disabled": true },
+                { "key": "qualifications", "value": "", "disabled": true },
+                { "key": "experienceYears", "value": "", "disabled": true },
+                { "key": "minConsultationFee", "value": "", "disabled": true },
+                { "key": "maxConsultationFee", "value": "", "disabled": true },
+                { "key": "sortBy", "value": "createdAt" },
+                { "key": "sortOrder", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "[PUBLIC] Available Doctors Today",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/public/doctors/available-today?page=1&limit=10&specialization=Cardiology",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor","public","doctors","available-today"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "specialization", "value": "Cardiology" },
+                { "key": "searchTerm", "value": "", "disabled": true },
+                { "key": "minConsultationFee", "value": "", "disabled": true },
+                { "key": "maxConsultationFee", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "[PUBLIC] Get Single Doctor Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/doctor/public/doctors/{{doctorId}}", "host": ["{{baseUrl}}"], "path": ["doctor","public","doctors","{{doctorId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule",
+      "item": [
+        {
+          "name": "Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/schedule/create-schedule", "host": ["{{baseUrl}}"], "path": ["schedule","create-schedule"] },
+            "body": { "mode": "raw", "raw": "{\n  \"startDateTime\": \"2026-09-06T09:00:00.000Z\",\n  \"endDateTime\": \"2026-09-06T17:00:00.000Z\",\n  \"meetingLink\": \"https://meet.google.com/abc-defg-hij\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Get My Schedules",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/schedule/get-schedule?page=1&limit=10&status=PUBLISHED",
+              "host": ["{{baseUrl}}"],
+              "path": ["schedule","get-schedule"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "PUBLISHED" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Schedules (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/schedule/get-all-schedules?page=1&limit=10&status=PUBLISHED",
+              "host": ["{{baseUrl}}"],
+              "path": ["schedule","get-all-schedules"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "PUBLISHED" },
+                { "key": "searchTerm", "value": "", "disabled": true },
+                { "key": "doctorId", "value": "", "disabled": true },
+                { "key": "email", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Schedule By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/schedule/get-schedule/{{scheduleId}}", "host": ["{{baseUrl}}"], "path": ["schedule","get-schedule","{{scheduleId}}"] }
+          }
+        },
+        {
+          "name": "Update Schedule",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/schedule/update-schedule/{{scheduleId}}", "host": ["{{baseUrl}}"], "path": ["schedule","update-schedule","{{scheduleId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"startDateTime\": \"2026-09-06T10:00:00.000Z\",\n  \"endDateTime\": \"2026-09-06T18:00:00.000Z\",\n  \"meetingLink\": \"https://meet.google.com/xyz-uvwx-yz1\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Publish Schedule",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/schedule/publish-schedule/{{scheduleId}}", "host": ["{{baseUrl}}"], "path": ["schedule","publish-schedule","{{scheduleId}}"] }
+          }
+        },
+        {
+          "name": "Delete Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/schedule/delete-schedule/{{scheduleId}}", "host": ["{{baseUrl}}"], "path": ["schedule","delete-schedule","{{scheduleId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointment",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/appointment/book-appointment", "host": ["{{baseUrl}}"], "path": ["appointment","book-appointment"] },
+            "body": { "mode": "raw", "raw": "{\n  \"scheduleId\": \"{{scheduleId}}\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Pay Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/appointment/pay-appointment", "host": ["{{baseUrl}}"], "path": ["appointment","pay-appointment"] },
+            "body": { "mode": "raw", "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/appointment/cancel-appointment", "host": ["{{baseUrl}}"], "path": ["appointment","cancel-appointment"] },
+            "body": { "mode": "raw", "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Payment Callback (bKash webhook)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointment/book-appointment/payment/callback?paymentID=BKASH123&status=success&appointmentId={{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointment","book-appointment","payment","callback"],
+              "query": [
+                { "key": "paymentID", "value": "BKASH123" },
+                { "key": "status", "value": "success" },
+                { "key": "appointmentId", "value": "{{appointmentId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Appointment Status — ONGOING (Doctor)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/appointment/update-appointment-status/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["appointment","update-appointment-status","{{appointmentId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ONGOING\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Update Appointment Status — COMPLETED (Doctor)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/appointment/update-appointment-status/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["appointment","update-appointment-status","{{appointmentId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETED\"\n}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "Get My Appointments (Patient)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/appointment/my-appointments?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointment","my-appointments"],
+              "query": [{ "key": "page", "value": "1" },{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Get Doctor Appointments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/appointment/doctor-appointments?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointment","doctor-appointments"],
+              "query": [{ "key": "page", "value": "1" },{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Get All Appointments (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/appointment/all-appointments?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointment","all-appointments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Appointment By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/appointment/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["appointment","{{appointmentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Get My Payment",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/payment/my-payment/{{paymentId}}", "host": ["{{baseUrl}}"], "path": ["payment","my-payment","{{paymentId}}"] }
+          }
+        },
+        {
+          "name": "Get All Payments (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/payment/?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment",""],
+              "query": [{ "key": "page", "value": "1" },{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Get Single Payment",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/payment/{{paymentId}}", "host": ["{{baseUrl}}"], "path": ["payment","{{paymentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Prescription",
+      "item": [
+        {
+          "name": "Create Prescription",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" },{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/prescription/", "host": ["{{baseUrl}}"], "path": ["prescription",""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"findings\": \"Patient presents with hypertension and mild chest discomfort. ECG shows minor ST changes.\",\n  \"medicines\": [\n    {\n      \"name\": \"Amlodipine\",\n      \"dosage\": \"5mg\",\n      \"duration\": \"30 days\",\n      \"instructions\": \"Take once daily in the morning after breakfast.\"\n    },\n    {\n      \"name\": \"Aspirin\",\n      \"dosage\": \"75mg\",\n      \"duration\": \"30 days\",\n      \"instructions\": \"Take once daily at night.\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Get Prescription by Appointment",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/prescription/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["prescription","{{appointmentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Patient Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{patientToken}}" }],
+            "url": { "raw": "{{baseUrl}}/analytics/patient-analytics", "host": ["{{baseUrl}}"], "path": ["analytics","patient-analytics"] }
+          }
+        },
+        {
+          "name": "Doctor Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{doctorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/analytics/doctor-analytics", "host": ["{{baseUrl}}"], "path": ["analytics","doctor-analytics"] }
+          }
+        },
+        {
+          "name": "Admin Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/analytics/admin-analytics", "host": ["{{baseUrl}}"], "path": ["analytics","admin-analytics"] }
+          }
+        }
+      ]
+    }
+  ]
+}
