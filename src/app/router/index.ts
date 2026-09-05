@@ -28,9 +28,9 @@ const moduleRoutes = [
 	{
 		path: "/schedule",
 		route: ScheduleRoutes,
-	},{
+	}, {
 		path: "/payment",
-		route:PaymentRoute
+		route: PaymentRoute
 	}
 ];
 
