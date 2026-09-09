@@ -42,3 +42,35 @@ export interface IGetAllDoctorsPayload {
 	sortBy?: string;
 	sortOrder?: "asc" | "desc";
 }
+export interface IPublicDoctorListPayload {
+	searchTerm?: string;
+	specialization?: string;
+	address?: string;
+	qualifications?: string;
+	experienceYears?: number | string;
+	minConsultationFee?: number | string;
+	maxConsultationFee?: number | string;
+	page?: number | string;
+	limit?: number | string;
+	sortBy?: string;
+	sortOrder?: "asc" | "desc";
+}
+
+export interface IUpdateDoctorPayload {
+    user?: {
+        name?: string;
+        email?: string;
+    };
+
+    doctor?: {
+        address?: string;
+        experienceYears?: number;
+        licenseNumber?: string;
+        qualifications?: string;
+        specialization?: string;
+        bio?: string;
+        consultationFee?: number;
+        contactNumber?: string;
+    };
+}
+
