@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Your Email</title>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f4f7fb; font-family:Arial, Helvetica, sans-serif;">
+  <div style="max-width:600px; margin:40px auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <div style="background:#2563eb; padding:30px; text-align:center;">
+      <h1 style="margin:0; color:#ffffff; font-size:28px;">
+        Verify Your Email
+      </h1>
+    </div>
+
+    <!-- Content -->
+    <div style="padding:35px 30px;">
+      <h2 style="margin-top:0; color:#1f2937;">
+        Hello <%= name %>,
+      </h2>
+
+      <p style="color:#4b5563; font-size:16px; line-height:1.6;">
+        Thank you for registering with us. Please use the OTP below to verify
+        your email address and complete your registration.
+      </p>
+
+      <!-- OTP -->
+      <div style="text-align:center; margin:30px 0;">
+        <div style="
+          display:inline-block;
+          padding:18px 35px;
+          background:#eff6ff;
+          border:2px dashed #2563eb;
+          border-radius:10px;
+        ">
+          <span style="
+            font-size:32px;
+            font-weight:bold;
+            letter-spacing:8px;
+            color:#2563eb;
+          ">
+            <%= otp %>
+          </span>
+        </div>
+      </div>
+
+      <p style="color:#6b7280; font-size:14px; text-align:center;">
+        This OTP will expire in <strong>5 minutes</strong>.
+      </p>
+
+      <p style="color:#4b5563; font-size:15px; line-height:1.6;">
+        If you did not create an account, you can safely ignore this email.
+      </p>
+
+      <p style="margin-top:30px; color:#4b5563;">
+        Best regards,<br />
+        <strong>Your Application Team</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f9fafb; padding:20px; text-align:center;">
+      <p style="margin:0; color:#9ca3af; font-size:13px;">
+        © <%= new Date().getFullYear() %> Your Application. All rights reserved.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>

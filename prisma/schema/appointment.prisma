@@ -1,0 +1,23 @@
+model Appointment{
+    id String @id @default(uuid())
+    status AppointmentStatus @default(PENDING)
+    joiningTime DateTime?
+    serialNumber Int?
+    recordUrl String?
+    recordPublicId String?
+    prescriptionUrl String?
+    prescriptionPublicId String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    patientId String
+    patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    doctorId String
+    doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    scheduleId String
+    schedule schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    payment Payment?
+    @@unique([patientId, doctorId, scheduleId], name: "unique_appointment_per_patient_doctor_schedule") 
+    @@unique([scheduleId, serialNumber , joiningTime], name: "unique_serial_number_per_schedule")
+    @@map("appointments")
+
+}
