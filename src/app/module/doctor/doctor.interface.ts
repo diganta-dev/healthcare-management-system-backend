@@ -57,20 +57,19 @@ export interface IPublicDoctorListPayload {
 }
 
 export interface IUpdateDoctorPayload {
-    user?: {
-        name?: string;
-        email?: string;
-    };
+	user?: {
+		name?: string;
+		email?: string;
+	};
 
-    doctor?: {
-        address?: string;
-        experienceYears?: number;
-        licenseNumber?: string;
-        qualifications?: string;
-        specialization?: string;
-        bio?: string;
-        consultationFee?: number;
-        contactNumber?: string;
-    };
+	doctor?: {
+		address?: string;
+		experienceYears?: number;
+		licenseNumber?: string;
+		qualifications?: string;
+		specialization?: string;
+		bio?: string;
+		consultationFee?: number;
+		contactNumber?: string;
+	};
 }
-

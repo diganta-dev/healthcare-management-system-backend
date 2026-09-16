@@ -1,3 +1,4 @@
+import "dotenv/config";
 import app from "./app";
 import config from "./app/config";
 import { deleteUnverifiedDoctor } from "./app/lib/cron";
@@ -16,6 +17,9 @@ const main = async () => {
 	try {
 		await prisma.$connect();
 		console.log("Connected to the database successfully.");
+		console.log(
+			`Connecting to Redis at: ${config.redis_url ? config.redis_url : `${config.redis_host}:${config.redis_port}`}`,
+		);
 		await redisClient.connect();
 		console.log("Connected to Redis successfully.");
 		await transporter.verify();

@@ -490,7 +490,6 @@ const updateDoctorProfile = async (
 					.upload_stream(
 						{
 							resource_type: "image",
-							
 						},
 						(error, result) => {
 							if (error) return reject(error);
@@ -554,7 +553,7 @@ const updateDoctorProfile = async (
 	});
 
 	return updatedDoctor;
-}
+};
 /**
  * Public listing of approved, active doctors with search, filter and pagination.
  * No authentication required.
@@ -613,8 +612,10 @@ const getAllDoctorPublicList = async (query: IPublicDoctorListPayload) => {
 
 	if (query.minConsultationFee || query.maxConsultationFee) {
 		const feeCondition: Record<string, number> = {};
-		if (query.minConsultationFee) feeCondition.gte = Number(query.minConsultationFee);
-		if (query.maxConsultationFee) feeCondition.lte = Number(query.maxConsultationFee);
+		if (query.minConsultationFee)
+			feeCondition.gte = Number(query.minConsultationFee);
+		if (query.maxConsultationFee)
+			feeCondition.lte = Number(query.maxConsultationFee);
 		andConditions.push({ consultationFee: feeCondition });
 	}
 
@@ -714,8 +715,10 @@ const getAvailableDoctorToday = async (query: IPublicDoctorListPayload) => {
 
 	if (query.minConsultationFee || query.maxConsultationFee) {
 		const feeCondition: Record<string, number> = {};
-		if (query.minConsultationFee) feeCondition.gte = Number(query.minConsultationFee);
-		if (query.maxConsultationFee) feeCondition.lte = Number(query.maxConsultationFee);
+		if (query.minConsultationFee)
+			feeCondition.gte = Number(query.minConsultationFee);
+		if (query.maxConsultationFee)
+			feeCondition.lte = Number(query.maxConsultationFee);
 		andConditions.push({ consultationFee: feeCondition });
 	}
 
@@ -845,10 +848,7 @@ const getSinglePublicDoctorProfile = async (doctorId: string) => {
 		);
 	}
 	if (doctor.user.status !== UserStatus.ACTIVE) {
-		throw new AppError(
-			httpStatus.NOT_FOUND,
-			"Doctor account is not active",
-		);
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor account is not active");
 	}
 
 	return doctor;

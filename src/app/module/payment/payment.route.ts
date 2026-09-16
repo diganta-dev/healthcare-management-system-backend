@@ -4,8 +4,20 @@ import { auth } from "../../middleware/checkAuth";
 import { Role } from "../../../generated/prisma/enums";
 
 const router = Router();
-router.get("/my-payment/:paymentId", PaymentController.getMypayment);
-router.get("/",auth(Role.ADMIN,Role.SUPER_ADMIN), PaymentController.getAllPayments);
-router.get("/:paymentId", PaymentController.getSinglePayment);
+router.get(
+	"/my-payment/:paymentId",
+	auth(Role.PATIENT, Role.ADMIN, Role.SUPER_ADMIN),
+	PaymentController.getMypayment,
+);
+router.get(
+	"/",
+	auth(Role.ADMIN, Role.SUPER_ADMIN),
+	PaymentController.getAllPayments,
+);
+router.get(
+	"/:paymentId",
+	auth(Role.PATIENT, Role.DOCTOR, Role.ADMIN, Role.SUPER_ADMIN),
+	PaymentController.getSinglePayment,
+);
 
-export const PaymentRoute = router; 
+export const PaymentRoute = router;

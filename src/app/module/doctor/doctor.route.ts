@@ -64,4 +64,3 @@ router.get(
 );
 
 export const DoctorRoute = router;
-

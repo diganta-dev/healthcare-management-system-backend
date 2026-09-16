@@ -1,11 +1,11 @@
 export interface IMedicene {
-	name: string,
-	dosage: string,
-	duration: string,
-	instructions?: string
+	name: string;
+	dosage: string;
+	duration: string;
+	instructions?: string;
 }
 export interface IPrescriptionPayload {
-	appointmentId: string,
-	findings: string,
-	medicines: IMedicene[],
+	appointmentId: string;
+	findings: string;
+	medicines: IMedicene[];
 }

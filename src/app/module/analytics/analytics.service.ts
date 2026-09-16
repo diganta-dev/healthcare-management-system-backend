@@ -1,246 +1,242 @@
-import httpStatus from "http-status"
+import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
-import { AppointmentStatus, DoctorVerificationStatus, PaymentStatus, ScheduleStatus } from "../../../generated/prisma/enums";
+import {
+	AppointmentStatus,
+	DoctorVerificationStatus,
+	PaymentStatus,
+	ScheduleStatus,
+} from "../../../generated/prisma/enums";
 import { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 
-
 const getAdminAnalytics = async () => {
+	//total doctors
 
-    //total doctors
+	const totalDoctors = await prisma.doctor.count({
+		where: {
+			isDeleted: false,
+		},
+	});
 
-    const totalDoctors = await prisma.doctor.count({
-        where : {
-            isDeleted : false,
-        }
-    })
+	const totalPendingDoctorApplications = await prisma.doctor.count({
+		where: {
+			isDeleted: false,
+			verificationStatus: DoctorVerificationStatus.PENDING,
+		},
+	});
 
-    const totalPendingDoctorApplications = await prisma.doctor.count({
-        where: {
-            isDeleted: false,
-            verificationStatus : DoctorVerificationStatus.PENDING
-        }
-    })
+	const totalApprovedDoctors = await prisma.doctor.count({
+		where: {
+			isDeleted: false,
+			verificationStatus: DoctorVerificationStatus.APPROVED,
+		},
+	});
+	const totalRejectedDoctors = await prisma.doctor.count({
+		where: {
+			isDeleted: false,
+			verificationStatus: DoctorVerificationStatus.REJECTED,
+		},
+	});
 
-    const totalApprovedDoctors = await prisma.doctor.count({
-        where: {
-            isDeleted: false,
-            verificationStatus: DoctorVerificationStatus.APPROVED,
-        },
-    });
-    const totalRejectedDoctors = await prisma.doctor.count({
-        where: {
-            isDeleted: false,
-            verificationStatus: DoctorVerificationStatus.REJECTED,
-        },
-    });
+	const totalPatients = await prisma.patient.count({
+		where: { isDeleted: false },
+	});
 
+	const totalAppointments = await prisma.appointment.count();
 
-    const totalPatients = await prisma.patient.count({
-        where: { isDeleted: false },
-    });
+	const totalCompletedAppointments = await prisma.appointment.count({
+		where: { status: AppointmentStatus.COMPLETED },
+	});
 
-    const totalAppointments = await prisma.appointment.count();
+	const totalCancelledAppointments = await prisma.appointment.count({
+		where: { status: AppointmentStatus.CANCELLED },
+	});
 
-    const totalCompletedAppointments = await prisma.appointment.count({
-        where: { status: AppointmentStatus.COMPLETED },
-    });
+	const totalRefundResult = await prisma.payment.aggregate({
+		where: {
+			status: PaymentStatus.PAID,
+		},
+		_sum: {
+			amount: true,
+		},
+	});
 
-    const totalCancelledAppointments = await prisma.appointment.count({
-        where: { status: AppointmentStatus.CANCELLED },
-    });
+	const totalRefunded = totalRefundResult._sum.amount?.toNumber() || 0;
 
-    const totalRefundResult = await prisma.payment.aggregate({
-        where: {
-            status: PaymentStatus.PAID
-        },
-        _sum: {
-            amount: true
-        }
-    })
+	const totalRevenueResult = await prisma.payment.aggregate({
+		where: {
+			status: PaymentStatus.PAID,
+		},
+		_sum: {
+			amount: true,
+		},
+	});
 
-    const totalRefunded = totalRefundResult._sum.amount?.toNumber() || 0
+	const totalRevenue =
+		(totalRevenueResult._sum.amount?.toNumber() || 0) - totalRefunded;
 
-    const totalRevenueResult = await prisma.payment.aggregate({
-        where : {
-            status : PaymentStatus.PAID
-        },
-        _sum : {
-            amount : true
-        }
-    })
+	return {
+		totalDoctors,
+		totalPendingDoctorApplications,
+		totalApprovedDoctors,
+		totalRejectedDoctors,
+		totalPatients,
+		totalAppointments,
+		totalCompletedAppointments,
+		totalCancelledAppointments,
+		totalRevenue,
+		totalRefunded,
+	};
+};
+const getPatientAnalytics = async (user: RequestUser) => {
+	const patient = await prisma.patient.findUnique({
+		where: { userId: user.userId },
+	});
 
-    const totalRevenue = (totalRevenueResult._sum.amount?.toNumber() || 0) - totalRefunded 
+	if (!patient) {
+		throw new AppError(httpStatus.NOT_FOUND, "Patient Profile Not Found");
+	}
 
-    
+	const totalAppointments = await prisma.appointment.count({
+		where: { patientId: patient.id },
+	});
 
-    return {
-        totalDoctors,
-        totalPendingDoctorApplications,
-        totalApprovedDoctors,
-        totalRejectedDoctors,
-        totalPatients,
-        totalAppointments,
-        totalCompletedAppointments,
-        totalCancelledAppointments,
-        totalRevenue,
-        totalRefunded
-    }
+	const upcomingAppointments = await prisma.appointment.count({
+		where: { patientId: patient.id, status: AppointmentStatus.CONFIRMED },
+	});
 
+	const completedAppointments = await prisma.appointment.count({
+		where: { patientId: patient.id, status: AppointmentStatus.COMPLETED },
+	});
 
-}
-const getPatientAnalytics = async (user : RequestUser) => {
+	const cancelledAppointments = await prisma.appointment.count({
+		where: { patientId: patient.id, status: AppointmentStatus.CANCELLED },
+	});
 
-    const patient = await prisma.patient.findUnique({
-        where: { userId: user.userId },
-    });
+	const totalAmountSpentResult = await prisma.payment.aggregate({
+		where: {
+			appointment: {
+				patientId: patient.id,
+			},
+			status: PaymentStatus.PAID,
+		},
+		_sum: {
+			amount: true,
+		},
+	});
 
-    if (!patient) {
-        throw new AppError(httpStatus.NOT_FOUND, "Patient Profile Not Found");
-    }
+	const totalAmountSpent = totalAmountSpentResult._sum.amount?.toNumber() || 0;
 
-    const totalAppointments = await prisma.appointment.count({
-        where: { patientId: patient.id },
-    });
+	const totalRefundedResult = await prisma.payment.aggregate({
+		where: {
+			appointment: {
+				patientId: patient.id,
+			},
+			status: PaymentStatus.REFUNDED,
+		},
+		_sum: {
+			amount: true,
+		},
+	});
 
-    const upcomingAppointments = await prisma.appointment.count({
-        where: { patientId: patient.id, status: AppointmentStatus.CONFIRMED },
-    });
+	const totalRefunded = totalRefundedResult._sum.amount?.toNumber() || 0;
 
-    const completedAppointments = await prisma.appointment.count({
-        where: { patientId: patient.id, status: AppointmentStatus.COMPLETED },
-    });
+	return {
+		totalAppointments,
+		upcomingAppointments,
+		completedAppointments,
+		cancelledAppointments,
+		totalAmountSpent,
+		totalRefunded,
+	};
+};
+const getDoctorAnalytics = async (user: RequestUser) => {
+	const doctor = await prisma.doctor.findUnique({
+		where: { userId: user.userId },
+	});
 
-    const cancelledAppointments = await prisma.appointment.count({
-        where: { patientId: patient.id, status: AppointmentStatus.CANCELLED },
-    });
+	if (!doctor) {
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor Profile Not Found");
+	}
 
-    const totalAmountSpentResult = await prisma.payment.aggregate({
-        where: {
-            appointment: {
-                patientId: patient.id,
-            },
-            status: PaymentStatus.PAID,
-        },
-        _sum: {
-            amount: true,
-        },
-    });
+	const totalSchedules = await prisma.schedule.count({
+		where: { doctorId: doctor.id, isDeleted: false },
+	});
 
-    const totalAmountSpent = totalAmountSpentResult._sum.amount?.toNumber() || 0;
+	const publishedSchedules = await prisma.schedule.count({
+		where: {
+			doctorId: doctor.id,
+			isDeleted: false,
+			status: ScheduleStatus.PUBLISHED,
+		},
+	});
 
-    const totalRefundedResult = await prisma.payment.aggregate({
-        where: {
-            appointment: {
-                patientId: patient.id,
-            },
-            status: PaymentStatus.REFUNDED,
-        },
-        _sum: {
-            amount: true,
-        },
-    });
+	const totalAppointments = await prisma.appointment.count({
+		where: { doctorId: doctor.id },
+	});
 
-    const totalRefunded = totalRefundedResult._sum.amount?.toNumber() || 0;
+	const upcomingAppointments = await prisma.appointment.count({
+		where: { doctorId: doctor.id, status: AppointmentStatus.CONFIRMED },
+	});
 
-    return {
-        totalAppointments,
-        upcomingAppointments,
-        completedAppointments,
-        cancelledAppointments,
-        totalAmountSpent,
-        totalRefunded
-    }
+	const ongoingAppointments = await prisma.appointment.count({
+		where: { doctorId: doctor.id, status: AppointmentStatus.ONGOING },
+	});
 
+	const completedAppointments = await prisma.appointment.count({
+		where: { doctorId: doctor.id, status: AppointmentStatus.COMPLETED },
+	});
 
-}
-const getDoctorAnalytics = async (user : RequestUser) => {
-    const doctor = await prisma.doctor.findUnique({
-        where: { userId: user.userId },
-    });
+	const cancelledAppointments = await prisma.appointment.count({
+		where: { doctorId: doctor.id, status: AppointmentStatus.CANCELLED },
+	});
 
-    if (!doctor) {
-        throw new AppError(httpStatus.NOT_FOUND, "Doctor Profile Not Found");
-    }
+	const totalDoctorRefundedResult = await prisma.payment.aggregate({
+		where: {
+			appointment: {
+				doctorId: doctor.id,
+			},
+			status: PaymentStatus.REFUNDED,
+		},
+		_sum: {
+			amount: true,
+		},
+	});
 
-    const totalSchedules = await prisma.schedule.count({
-        where: { doctorId: doctor.id, isDeleted: false },
-    });
+	const totalDoctorRefunded =
+		totalDoctorRefundedResult._sum.amount?.toNumber() || 0;
 
-    const publishedSchedules = await prisma.schedule.count({
-        where: {
-            doctorId: doctor.id,
-            isDeleted: false,
-            status: ScheduleStatus.PUBLISHED,
-        },
-    });
+	const totalDoctorEarningsResult = await prisma.payment.aggregate({
+		where: {
+			appointment: {
+				doctorId: doctor.id,
+			},
+			status: PaymentStatus.PAID,
+		},
+		_sum: {
+			amount: true,
+		},
+	});
 
-    const totalAppointments = await prisma.appointment.count({
-        where: { doctorId: doctor.id },
-    });
+	const totalDoctorEarnings =
+		(totalDoctorEarningsResult._sum.amount?.toNumber() || 0) -
+		totalDoctorRefunded;
 
-    const upcomingAppointments = await prisma.appointment.count({
-        where: { doctorId: doctor.id, status: AppointmentStatus.CONFIRMED },
-    });
-
-    const ongoingAppointments = await prisma.appointment.count({
-        where: { doctorId: doctor.id, status: AppointmentStatus.ONGOING },
-    });
-
-    const completedAppointments = await prisma.appointment.count({
-        where: { doctorId: doctor.id, status: AppointmentStatus.COMPLETED },
-    });
-
-    const cancelledAppointments = await prisma.appointment.count({
-        where: { doctorId: doctor.id, status: AppointmentStatus.CANCELLED },
-    });
-
-    const totalDoctorRefundedResult = await prisma.payment.aggregate({
-        where: {
-            appointment: {
-                doctorId: doctor.id,
-            },
-            status: PaymentStatus.REFUNDED,
-        },
-        _sum: {
-            amount: true,
-        },
-    });
-
-    const totalDoctorRefunded = totalDoctorRefundedResult._sum.amount?.toNumber() || 0;
-
-    const totalDoctorEarningsResult = await prisma.payment.aggregate({
-        where: {
-            appointment: {
-                doctorId: doctor.id,
-            },
-            status: PaymentStatus.PAID,
-        },
-        _sum: {
-            amount: true,
-        },
-    });
-
-    const totalDoctorEarnings = (totalDoctorEarningsResult._sum.amount?.toNumber() || 0) - totalDoctorRefunded;
-
-    
-
-    return {
-        totalSchedules,
-        publishedSchedules,
-        totalAppointments,
-        upcomingAppointments,
-        ongoingAppointments,
-        completedAppointments,
-        cancelledAppointments,
-        totalDoctorEarnings,
-        totalDoctorRefunded
-    }
-
-}
+	return {
+		totalSchedules,
+		publishedSchedules,
+		totalAppointments,
+		upcomingAppointments,
+		ongoingAppointments,
+		completedAppointments,
+		cancelledAppointments,
+		totalDoctorEarnings,
+		totalDoctorRefunded,
+	};
+};
 
 export const AnalyticsServices = {
-    getAdminAnalytics,
-    getPatientAnalytics,
-    getDoctorAnalytics
-}
+	getAdminAnalytics,
+	getPatientAnalytics,
+	getDoctorAnalytics,
+};

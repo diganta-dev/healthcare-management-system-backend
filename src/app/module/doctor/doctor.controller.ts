@@ -131,4 +131,3 @@ export const DoctorController = {
 	getAvailableDoctorToday,
 	getSinglePublicDoctorProfile,
 };
-

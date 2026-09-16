@@ -5,6 +5,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import type { IGoogleLoginPayload, IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
 import { AppError } from "../../utils/AppError";
+import config from "../../config";
 
 const registerPatient = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
@@ -39,14 +40,14 @@ const verifyRegistrationEmail = catchAsync(
 
 		res.cookie("accessToken", accessToken, {
 			httpOnly: true,
-			secure: false,
-			sameSite: "none",
+			secure: config.node_env === "production" ? true : false,
+			sameSite: config.node_env === "production" ? "none" : "lax",
 			maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
 		});
 		res.cookie("refreshToken", refreshToken, {
 			httpOnly: true,
-			secure: false,
-			sameSite: "none",
+			secure: config.node_env === "production" ? true : false,
+			sameSite: config.node_env === "production" ? "none" : "lax",
 			maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 		});
 
@@ -71,15 +72,15 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "production" ? true : false,
+		sameSite: config.node_env === "production" ? "none" : "lax",
 		maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
 	});
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+		secure: config.node_env === "production" ? true : false,
+		sameSite: config.node_env === "production" ? "none" : "lax",
+		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days 
 	});
 
 	sendResponse(res, {
@@ -94,19 +95,19 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 });
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
-	const result = await AuthService.googleLogin(payload);
+	const result = await AuthService.googleLogin(payload.idToken);
 	const { accessToken, refreshToken } = result;
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "production" ? true : false,
+		sameSite: config.node_env === "production" ? "none" : "lax",
 		maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
 	});
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "production" ? true : false,
+		sameSite: config.node_env === "production" ? "none" : "lax",
 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
 
@@ -149,14 +150,14 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "production" ? true : false,
+		sameSite: config.node_env === "production" ? "none" : "lax",
 		maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
 	});
 	res.cookie("refreshToken", newRefreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "production" ? true : false,
+		sameSite: config.node_env === "production" ? "none" : "lax",
 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
 
@@ -190,6 +191,16 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 		data: null,
 	});
 });
+const logout = catchAsync(async (req: Request, res: Response) => {
+	res.clearCookie("accessToken");
+	res.clearCookie("refreshToken");
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Logged out successfully",
+		data: null,
+	});
+});
 
 export const AuthController = {
 	registerPatient,
@@ -200,4 +211,5 @@ export const AuthController = {
 	googleLogin,
 	forgotPassword,
 	resetPassword,
+	logout,
 };
