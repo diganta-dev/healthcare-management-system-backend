@@ -45,7 +45,21 @@ export const ApplyDoctorZodSchema = z.object({
 		consultationFee: z
 			.number()
 			.positive("Consultation fee must be greater than 0")
-			.multipleOf(0.01, "Consultation fee can have at most 2 decimal places"),
+			.multipleOf(0.01, "Consultation fee can have at most 2 decimal places")
+			.optional(),
+
+		contactNumber: z
+			.string()
+			.trim()
+			.min(5, "Contact number is invalid")
+			.max(25, "Contact number must not exceed 25 characters")
+			.optional(),
+
+		address: z
+			.string()
+			.trim()
+			.max(255, "Address must not exceed 255 characters")
+			.optional(),
 	}),
 });
 

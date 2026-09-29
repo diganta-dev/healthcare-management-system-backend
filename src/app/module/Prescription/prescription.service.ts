@@ -1,4 +1,4 @@
-import { UploadApiResponse } from "cloudinary";
+import type { UploadApiResponse } from "cloudinary";
 import { AppointmentStatus, Role } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { transporter } from "../../lib/nodemailer";

@@ -1,8 +1,8 @@
 import { Role } from "../../../generated/prisma/enums";
-import { PaymentWhereInput } from "../../../generated/prisma/models";
-import { IQuery } from "../../interfaces/global.interface";
+import type { PaymentWhereInput } from "../../../generated/prisma/models";
+import type { IQuery } from "../../interfaces/global.interface";
 import { prisma } from "../../lib/prisma";
-import { RequestUser } from "../../middleware/checkAuth";
+import type { RequestUser } from "../../middleware/checkAuth";
 
 const getMyPayment = async (query: IQuery, user: RequestUser) => {
 	const limit = query.limit ? Number(query.limit) : 10;

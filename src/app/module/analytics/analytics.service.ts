@@ -6,7 +6,7 @@ import {
 	PaymentStatus,
 	ScheduleStatus,
 } from "../../../generated/prisma/enums";
-import { RequestUser } from "../../middleware/checkAuth";
+import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 
 const getAdminAnalytics = async () => {

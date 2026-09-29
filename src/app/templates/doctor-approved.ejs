@@ -47,6 +47,25 @@
         available doctor features.
       </p>
 
+      <!-- Login Credentials -->
+      <div style="background: #ecfdf5; border: 1px solid #86efac; padding: 20px; border-radius: 8px; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #166534;">Your Login Credentials</h3>
+
+        <p style="margin: 8px 0; color: #333;">
+          <strong>Email:</strong>
+          <%= user.email %>
+        </p>
+
+        <p style="margin: 8px 0; color: #333;">
+          <strong>Temporary Password:</strong>
+          <span style="font-family: monospace; font-size: 16px; color: #166534;"><%= user.password %></span>
+        </p>
+
+        <p style="margin: 12px 0 0; font-size: 13px; color: #555; line-height: 1.5;">
+          Please log in with these credentials and change your password immediately.
+        </p>
+      </div>
+
       <p style="font-size: 15px; color: #555;">
         Thank you for joining our healthcare platform.
       </p>

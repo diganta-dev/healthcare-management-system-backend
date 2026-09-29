@@ -19,8 +19,8 @@ import type {
 	IPaymentAppointmentPayload,
 	IUpdateAppointmentPayload,
 } from "./appointment.interface";
-import { IQuery } from "../../interfaces/global.interface";
-import { AppointmentWhereInput } from "../../../generated/prisma/models";
+import type { IQuery } from "../../interfaces/global.interface";
+import type { AppointmentWhereInput } from "../../../generated/prisma/models";
 
 const bookAppointment = async (
 	payload: IAppointmentPayload,

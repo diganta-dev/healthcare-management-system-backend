@@ -13,7 +13,7 @@ import { Role } from "../../../generated/prisma/browser";
 
 const router = Router();
 
-// ── Auth-protected routes ───────────────────────────────────────────────────────
+// ── Public routes ───────────────────────────────────────────────────────────────
 router.post(
 	"/apply-as-doctor",
 	upload.fields([
@@ -27,7 +27,9 @@ router.post(
 	"/apply-as-doctor/verify-email",
 	DoctorController.verifyDoctorEmail,
 );
-router.post(
+
+// ── Auth-protected routes ───────────────────────────────────────────────────────
+router.patch(
 	"/approve-doctor",
 	auth(Role.ADMIN, Role.SUPER_ADMIN),
 	DoctorController.aproveDoctorApplication,

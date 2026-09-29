@@ -80,7 +80,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 		httpOnly: true,
 		secure: config.node_env === "production" ? true : false,
 		sameSite: config.node_env === "production" ? "none" : "lax",
-		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days 
+		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
 
 	sendResponse(res, {

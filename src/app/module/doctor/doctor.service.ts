@@ -19,13 +19,15 @@ import type { DoctorWhereInput } from "../../../generated/prisma/models";
 import config from "../../config";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import redisClient from "../../lib/redis";
+
 import ejs from "ejs";
 import path from "path";
 import { transporter } from "../../lib/nodemailer";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
 import { addDays, startOfDay } from "date-fns";
+import generateRandomPassword from "../../utils/randomPassword";
+import { redisClient } from "../../lib/redis";
 
 const applyDoctor = async (
 	payload: IDoctorPayload,
@@ -138,6 +140,8 @@ const applyDoctor = async (
 			value: expirationSeconds, // 5 minutes in seconds
 		},
 	});
+	console.log(otp);
+
 	const templatePath = path.join(
 		process.cwd(),
 		"src/app/templates/user-registration-otp.ejs",
@@ -248,6 +252,16 @@ const aproveDoctorApplication = async (
 			"Rejection reason is required when rejecting a doctor application",
 		);
 	}
+	const isApproved = verificationStatus === DoctorVerificationStatus.APPROVED;
+	const randomDoctorPassword = isApproved ? generateRandomPassword(8) : null;
+	const hashedPassword = randomDoctorPassword
+		? await bcrypt.hash(randomDoctorPassword, Number(config.bcrypt_salt_rounds))
+		: null;
+	if (config.node_env === "development" && randomDoctorPassword) {
+		console.log(
+			`Generated password for doctor ${existingDoctor.user.email}: ${randomDoctorPassword}`,
+		);
+	}
 	// Update the doctor's verification status
 	const updatedDoctor = await prisma.doctor.update({
 		where: {
@@ -259,11 +273,15 @@ const aproveDoctorApplication = async (
 				verificationStatus === DoctorVerificationStatus.REJECTED
 					? rejectionReason
 					: null,
+
 			reviewedBy: reviewer.userId,
 			reviewedAt: new Date(),
+			...(hashedPassword
+				? { user: { update: { password: hashedPassword } } }
+				: {}),
 		},
 	});
-	const isApproved = verificationStatus === DoctorVerificationStatus.APPROVED;
+
 	const templatePath = path.join(
 		process.cwd(),
 		`src/app/templates/${isApproved ? "doctor-approved.ejs" : "doctor-rejected.ejs"}`,
@@ -271,6 +289,8 @@ const aproveDoctorApplication = async (
 	const templateData = {
 		user: {
 			name: existingDoctor.user.name,
+			email: existingDoctor.user.email,
+			password: randomDoctorPassword, // Only include password if approved
 		},
 		doctor: {
 			specialization: existingDoctor.specialization,
@@ -422,14 +442,8 @@ const getAllDoctors = async (query: IGetAllDoctorsPayload) => {
 		},
 		include: {
 			user: {
-				select: {
-					id: true,
-					name: true,
-					email: true,
-					role: true,
-					status: true,
-					imageUrl: true,
-					emailVerified: true,
+				omit: {
+					password: true, // পাসওয়ার্ড বাদে বাকি সব তথ্য আসবে
 				},
 			},
 		},

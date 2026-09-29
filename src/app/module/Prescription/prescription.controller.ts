@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import httpStatus from "http-status";
-import { RequestUser } from "../../middleware/checkAuth";
+import type { RequestUser } from "../../middleware/checkAuth";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import { IPrescriptionPayload } from "./prescription.interface";
+import type { IPrescriptionPayload } from "./prescription.interface";
 import { PrescriptionService } from "./prescription.service";
 
 const createPrescription = catchAsync(async (req: Request, res: Response) => {

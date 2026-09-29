@@ -22,7 +22,13 @@ const getMySchedule = catchAsync(async (req, res) => {
 		statusCode: 200,
 		success: true,
 		message: "Schedules retrieved successfully",
-		data: result,
+		meta: {
+			page: result.page,
+			limit: result.limit,
+			total: result.total,
+			totalPages: result.tatalPages,
+		},
+		data: result.data,
 	});
 });
 

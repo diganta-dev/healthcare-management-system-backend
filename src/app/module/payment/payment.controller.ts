@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
-import { RequestUser } from "../../middleware/checkAuth";
+import type { RequestUser } from "../../middleware/checkAuth";
 import { PaymentService } from "./payment.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";

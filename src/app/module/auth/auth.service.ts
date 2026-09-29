@@ -47,6 +47,7 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 	);
 	const otp = crypto.randomInt(100000, 999999).toString();
 	// Here you can send the OTP to the user's email using your preferred email service
+
 	const expirationSeconds = 5 * 60;
 	const key = `register-verify-otp:${email}`;
 	await redisClient.set(key, otp, {
@@ -70,6 +71,10 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 			value: expirationSeconds, // 5 minutes in seconds
 		},
 	});
+	//developer mode log otp to console
+	if (config.node_env === "development") {
+		console.log(`OTP for ${email}: ${otp}`);
+	}
 	const templatePath = path.join(
 		process.cwd(),
 		"src/app/templates/user-registration-otp.ejs",
@@ -610,7 +615,6 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 		html: html,
 	});
 };
-
 
 export const AuthService = {
 	registerPatient,
