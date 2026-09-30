@@ -499,6 +499,9 @@ const getToDaySchedules = async (query: IQuery) => {
 			startDateTime: {
 				gte: startOfToday,
 				lt: endOfToday,
+				
+			},
+			endDateTime: {
 				gt: now,
 			},
 		},

@@ -16,7 +16,12 @@ export const validateQuery = (zodSchema: ZodTypeAny) => {
 			throw new Error(errorMessages);
 		}
 		// Normalise: write sanitised values back so controllers get clean data
-		req.query = result.data as typeof req.query;
+		Object.defineProperty(req, "query", {
+			value: result.data,
+			writable: true,
+			enumerable: true,
+			configurable: true,
+		});
 		next();
 	});
 };

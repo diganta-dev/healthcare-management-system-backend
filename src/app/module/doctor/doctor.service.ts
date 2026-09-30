@@ -702,7 +702,10 @@ const getAvailableDoctorToday = async (query: IPublicDoctorListPayload) => {
 					startDateTime: {
 						gte: startOfToday,
 						lt: startOfTomorrow,
-						gt: now, // schedule hasn't started yet
+						
+					},
+					endDateTime: {
+						gt: now,
 					},
 				},
 			},
@@ -767,6 +770,9 @@ const getAvailableDoctorToday = async (query: IPublicDoctorListPayload) => {
 						startDateTime: {
 							gte: startOfToday,
 							lt: startOfTomorrow,
+							
+						},
+						endDateTime: {
 							gt: now,
 						},
 					},
