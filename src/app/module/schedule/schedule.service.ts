@@ -63,8 +63,8 @@ const createSchedule = async (
 	}
 
 	const durationInMinutes = differenceInMinutes(
-		payload.startDateTime,
 		payload.endDateTime,
+		payload.startDateTime,   
 	);
 	const MINUTES_ALLOCATED_PER_SLOT = 20;
 	const totalSlots = Math.floor(durationInMinutes / MINUTES_ALLOCATED_PER_SLOT);
@@ -325,8 +325,8 @@ const updateSchedule = async (
 	}
 
 	const durationInMinutes = differenceInMinutes(
-		payload.startDateTime,
 		payload.endDateTime,
+		payload.startDateTime,
 	);
 	const MINUTES_ALLOCATED_PER_SLOT = 20;
 	const totalSlots = Math.floor(durationInMinutes / MINUTES_ALLOCATED_PER_SLOT);
@@ -468,9 +468,12 @@ const getToDaySchedules = async (query: IQuery) => {
 	if (!query.doctorId) {
 		throw new AppError(httpStatus.BAD_REQUEST, "Doctor Id is required");
 	}
-	const doctor = await prisma.doctor.findUnique({
+	const doctor = await prisma.doctor.findFirst({
 		where: {
-			userId: query.doctorId,
+			OR: [
+				{ id: query.doctorId },
+				{ userId: query.doctorId },
+			],
 		},
 	});
 	if (!doctor) {
@@ -479,7 +482,6 @@ const getToDaySchedules = async (query: IQuery) => {
 	const limit = query.limit ? Number(query.limit) : 10;
 	const page = query.page ? Number(query.page) : 1;
 	const skip = (page - 1) * limit;
-	const searchTerm = query.searchTerm ? query.searchTerm : "";
 	const sortOrder = query.sortOrder ? query.sortOrder : "desc";
 	const sortBy = query.sortBy ? query.sortBy : "startDateTime";
 	const now = new Date();

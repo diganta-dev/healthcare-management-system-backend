@@ -53,6 +53,21 @@ const getAllSchedules = catchAsync(async (req, res) => {
 		data: result,
 	});
 });
+const getToDaySchedules = catchAsync(async (req, res) => {
+	const result = await ScheduleService.getToDaySchedules(req.query);
+	sendResponse(res, {
+		statusCode: 200,
+		success: true,
+		message: "Today's schedules retrieved successfully",
+		meta: {
+			page: result.page,
+			limit: result.limit,
+			total: result.total,
+			totalPages: result.totalPages,
+		},
+		data: result.data,
+	});
+});
 const updateSchedule = catchAsync(async (req, res) => {
 	const { id } = req.params as { id: string };
 	const { userId } = req.user as RequestUser;
@@ -96,6 +111,7 @@ export const ScheduleController = {
 	getMySchedule,
 	getScheduleById,
 	getAllSchedules,
+	getToDaySchedules,
 	updateSchedule,
 	deleteSchedule,
 	publishSchedule,

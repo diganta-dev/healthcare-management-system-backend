@@ -27,6 +27,11 @@ router.get(
 	ScheduleController.getAllSchedules,
 );
 router.get(
+	"/get-today-schedules",
+	auth(Role.PATIENT, Role.DOCTOR, Role.ADMIN),
+	ScheduleController.getToDaySchedules,
+);
+router.get(
 	"/get-schedule/:id",
 	auth(Role.DOCTOR, Role.ADMIN, Role.DOCTOR),
 	ScheduleController.getScheduleById,

@@ -50,6 +50,15 @@ export const getBkashIdToken = async () => {
 
 			const bkashRefreshTokenResult = await refreshTokenResponse.json();
 
+			// bKash returns HTTP 200 even on failure — check statusCode in body
+			if (bkashRefreshTokenResult.statusCode !== "0000" || !bkashRefreshTokenResult.id_token) {
+				// Stale refresh token — clear it and fall through to fresh grant
+				await redisClient.del(RefreshTokenKey);
+				await redisClient.del(IdTokenKey);
+				// Fall through to fresh grant below (re-call)
+				return getBkashIdToken();
+			}
+
 			bkashIdToken = bkashRefreshTokenResult.id_token as string;
 
 			await redisClient.set(IdTokenKey, bkashIdToken, {

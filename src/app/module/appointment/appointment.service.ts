@@ -118,36 +118,51 @@ const bookAppointment = async (
 			},
 		});
 
-		const idToken = await getBkashIdToken();
+		let idToken: string | null = null;
+		try {
+			idToken = await getBkashIdToken();
+		} catch {
+			throw new AppError(
+				httpStatus.BAD_GATEWAY,
+				"Unable to connect to the bKash payment gateway",
+			);
+		}
 		if (!idToken) {
 			throw new AppError(
-				httpStatus.INTERNAL_SERVER_ERROR,
+				httpStatus.BAD_GATEWAY,
 				"Failed to get bKash id token",
 			);
 		}
-		const createBkashPaymentResponse = await fetch(
-			`${config.bkash_base_url}/tokenized/checkout/create`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json",
-					Authorization: idToken,
-					"x-app-key": config.bkash_app_key,
+		let createBkashPaymentResponse: Response;
+		try {
+			createBkashPaymentResponse = await fetch(
+				`${config.bkash_base_url}/tokenized/checkout/create`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						Authorization: idToken,
+						"x-app-key": config.bkash_app_key,
+					},
+					body: JSON.stringify({
+						mode: "0011",
+						payerReference: user.email,
+						callbackURL: `${config.bkash_callback_url}/appointment/book-appointment/payment/callback`,
+						merchantAssociationInfo: "MI05MID54RF09123456One",
+						amount: amount,
+						currency: "BDT",
+						intent: "sale",
+						merchantInvoiceNumber: appointment.id,
+					}),
 				},
-				body: JSON.stringify({
-					agreementID: "TokenizedMerchant01L3IKB6H1565072174986", //appointment id
-					mode: "0011",
-					payerReference: user.email, //user phone number or email
-					callbackURL: `${config.bkash_callback_url}/appointment/book-appointment/payment/callback`,
-					merchantAssociationInfo: "MI05MID54RF09123456One",
-					amount: amount,
-					currency: "BDT",
-					intent: "sale",
-					merchantInvoiceNumber: appointment.id, //appointment id
-				}),
-			},
-		);
+			);
+		} catch {
+			throw new AppError(
+				httpStatus.BAD_GATEWAY,
+				"Unable to connect to the bKash payment gateway",
+			);
+		}
 
 		if (!createBkashPaymentResponse.ok) {
 			throw new AppError(
@@ -157,6 +172,15 @@ const bookAppointment = async (
 		}
 
 		const bkashCreatePaymentResult = await createBkashPaymentResponse.json();
+
+		// bKash returns HTTP 200 even on failure — check body statusCode
+		if (bkashCreatePaymentResult.statusCode !== "0000" || !bkashCreatePaymentResult.paymentID) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				`Failed to create bKash payment: ${bkashCreatePaymentResult.statusMessage ?? "Unknown error"}`,
+			);
+		}
+
 		await tx.payment.create({
 			data: {
 				appointmentId: appointment.id,
@@ -226,7 +250,6 @@ const payAppointment = async (
 				"x-app-key": config.bkash_app_key,
 			},
 			body: JSON.stringify({
-				agreementID: "TokenizedMerchant01L3IKB6H1565072174986", //appointment id
 				mode: "0011",
 				payerReference: user.email, //user phone number or email
 				callbackURL: `${config.bkash_callback_url}/appointment/book-appointment/payment/callback`,
@@ -247,6 +270,15 @@ const payAppointment = async (
 	}
 
 	const bkashCreatePaymentResult = await createBkashPaymentResponse.json();
+
+	// bKash returns HTTP 200 even on failure — check body statusCode
+	if (bkashCreatePaymentResult.statusCode !== "0000" || !bkashCreatePaymentResult.paymentID) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`Failed to create bKash payment: ${bkashCreatePaymentResult.statusMessage ?? "Unknown error"}`,
+		);
+	}
+
 	await prisma.payment.update({
 		where: {
 			appointmentId: appointment.id,
