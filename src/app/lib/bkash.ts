@@ -1,7 +1,7 @@
 import config from "../config";
 import redisClient from "./redis";
 
-export const getBkashIdToken = async () => {
+export const getBkashIdToken = async (): Promise<string> => {
 	try {
 		const IdTokenKey = "bkash:idToken";
 		const RefreshTokenKey = "bkash:refreshToken";
@@ -51,7 +51,11 @@ export const getBkashIdToken = async () => {
 			const bkashRefreshTokenResult = await refreshTokenResponse.json();
 
 			// bKash returns HTTP 200 even on failure — check statusCode in body
-			if (bkashRefreshTokenResult.statusCode !== "0000" || !bkashRefreshTokenResult.id_token) {
+			if (
+				bkashRefreshTokenResult.statusCode !== "0000" ||
+				typeof bkashRefreshTokenResult.id_token !== "string" ||
+				!bkashRefreshTokenResult.id_token
+			) {
 				// Stale refresh token — clear it and fall through to fresh grant
 				await redisClient.del(RefreshTokenKey);
 				await redisClient.del(IdTokenKey);
@@ -78,10 +82,10 @@ export const getBkashIdToken = async () => {
 				},
 			);
 
-			return bkashIdToken;
+			return bkashRefreshTokenResult.id_token;
 		}
 
-		if (bkashIdTokenTTL > 600) {
+		if (bkashIdTokenTTL > 600 && bkashIdToken) {
 			return bkashIdToken;
 		}
 
@@ -107,6 +111,12 @@ export const getBkashIdToken = async () => {
 		}
 
 		const result = await response.json();
+		if (typeof result.id_token !== "string" || !result.id_token) {
+			throw new Error("Bkash did not return a valid access token");
+		}
+		if (typeof result.refresh_token !== "string" || !result.refresh_token) {
+			throw new Error("Bkash did not return a valid refresh token");
+		}
 
 		//bkash id token set
 		await redisClient.set(IdTokenKey, result.id_token, {
@@ -124,11 +134,10 @@ export const getBkashIdToken = async () => {
 			},
 		});
 
-		bkashIdToken = result.id_token;
-
-		return bkashIdToken;
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	} catch (error: any) {
-		throw new Error(error.message);
+		return result.id_token;
+	} catch (error: unknown) {
+		throw new Error(
+			error instanceof Error ? error.message : "Bkash request failed",
+		);
 	}
 };

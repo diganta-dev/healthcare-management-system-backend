@@ -11,29 +11,33 @@ export const globalErrorHandler = async (
 	res: Response,
 	_next: NextFunction,
 ) => {
-	if (config.node_env === "development") {
-		console.log("Error from Global Error Handler", err);
+	// ✅ Professional: Only log UNEXPECTED errors (bugs), not operational errors (401, 403, 404, etc.)
+	// AppError = intentional/operational error — no need to log
+	// Everything else = unexpected bug — must log
+	const isOperational = err instanceof AppError;
+
+	if (!isOperational && config.node_env === "development") {
+		console.error("🔥 UNEXPECTED Error from Global Error Handler", err);
 	}
 
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
 	let errorMessage = err.message || "Internal Server Error";
 	const errorName = err.name || "Internal Server Error";
-	// let errorDetails = err.stack
 
 	if (err instanceof Prisma.PrismaClientValidationError) {
 		statusCode = httpStatus.BAD_REQUEST;
 		errorMessage = "You have provided incorrect field type or missing fields";
 	} else if (err instanceof Prisma.PrismaClientKnownRequestError) {
 		if (err.code === "P2002") {
-			(statusCode = httpStatus.BAD_REQUEST),
-				(errorMessage = "Duplicate Key Error");
+			statusCode = httpStatus.BAD_REQUEST;
+			errorMessage = "Duplicate Key Error";
 		} else if (err.code === "P2003") {
-			(statusCode = httpStatus.BAD_REQUEST),
-				(errorMessage = "Foreign key constraint failed");
+			statusCode = httpStatus.BAD_REQUEST;
+			errorMessage = "Foreign key constraint failed";
 		} else if (err.code === "P2025") {
-			(statusCode = httpStatus.BAD_REQUEST),
-				(errorMessage =
-					"An operation failed because it depends on one or more records that were required but not found.");
+			statusCode = httpStatus.BAD_REQUEST;
+			errorMessage =
+				"An operation failed because it depends on one or more records that were required but not found.";
 		}
 	} else if (err instanceof Prisma.PrismaClientInitializationError) {
 		if (err.errorCode === "P1000") {
