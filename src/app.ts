@@ -16,7 +16,20 @@ const app: Application = express();
 
 app.use(
 	cors({
-		origin: config.frontend_url,
+		// ✅ Support multiple origins: local dev + deployed frontend
+		origin: (origin, callback) => {
+			const allowedOrigins = [
+				config.frontend_url,
+				"https://health-care-frontend-inky.vercel.app",
+			].filter(Boolean) as string[];
+
+			// Allow requests with no origin (e.g. mobile apps, curl, Postman)
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error(`CORS: Origin '${origin}' is not allowed`));
+			}
+		},
 		credentials: true,
 	}),
 );

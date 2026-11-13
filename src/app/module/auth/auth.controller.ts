@@ -192,8 +192,8 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 const logout = catchAsync(async (req: Request, res: Response) => {
-	res.clearCookie("accessToken");
-	res.clearCookie("refreshToken");
+	res.clearCookie("accessToken", { httpOnly: true, secure: config.node_env === "production", sameSite: config.node_env === "production" ? "none" : "lax" });
+	res.clearCookie("refreshToken", { httpOnly: true, secure: config.node_env === "production", sameSite: config.node_env === "production" ? "none" : "lax" });
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,

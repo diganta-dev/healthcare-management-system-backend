@@ -11,13 +11,12 @@ export const globalErrorHandler = async (
 	res: Response,
 	_next: NextFunction,
 ) => {
-	// ✅ Professional: Only log UNEXPECTED errors (bugs), not operational errors (401, 403, 404, etc.)
-	// AppError = intentional/operational error — no need to log
-	// Everything else = unexpected bug — must log
+	// ✅ AppError = intentional/operational error (401, 403, 404, 400) — do NOT log
+	// Anything else = unexpected programmer error (bug) — ALWAYS log regardless of env
 	const isOperational = err instanceof AppError;
 
-	if (!isOperational && config.node_env === "development") {
-		console.error("🔥 UNEXPECTED Error from Global Error Handler", err);
+	if (!isOperational) {
+		console.error("🔥 UNEXPECTED Error:", err);
 	}
 
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;

@@ -1,6 +1,8 @@
 import type { ZodTypeAny } from "zod";
 import { catchAsync } from "../utils/catchAsync";
 import type { NextFunction, Request, Response } from "express";
+import httpStatus from "http-status";
+import { AppError } from "../utils/AppError";
 
 /**
  * Validates req.query against the provided Zod schema.
@@ -13,7 +15,8 @@ export const validateQuery = (zodSchema: ZodTypeAny) => {
 			const errorMessages = result.error.issues
 				.map((issue) => issue.message)
 				.join(", ");
-			throw new Error(errorMessages);
+			// ✅ Use AppError so the global handler treats this as an operational error (no stack trace log)
+			throw new AppError(httpStatus.BAD_REQUEST, errorMessages);
 		}
 		// Normalise: write sanitised values back so controllers get clean data
 		Object.defineProperty(req, "query", {
